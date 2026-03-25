@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Hide internal template back buttons globally */
+button svg.lucide-arrow-left {
+  display: none !important;
+}
+
+button:has(svg.lucide-arrow-left) {
+  display: none !important;
+}
