@@ -8,8 +8,7 @@ const {
   getByCvNumber,
   listMyResumes,
   deleteResume,
-  viewResumePDF,
-  downloadResumePDF
+  viewResumePDF
 } = require("../controllers/resume.controller");
 
 
@@ -42,13 +41,6 @@ router.get("/cv/:cvNumber", getByCvNumber);
 // Open resume PDF through backend
 // ======================================================
 router.get("/view/:cvNumber", viewResumePDF);
-
-
-// ======================================================
-// GET /api/resumes/download/:cvNumber
-// Force download resume PDF
-// ======================================================
-router.get("/download/:cvNumber", downloadResumePDF);
 
 
 // ======================================================

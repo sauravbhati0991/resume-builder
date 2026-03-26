@@ -20,6 +20,11 @@ const resumeSchema = new mongoose.Schema(
       trim: true
     },
 
+    pdfPublicId: {
+      type: String,
+      default: ""
+    },
+
     categoryName: {
       type: String,
       default: "",
@@ -52,7 +57,5 @@ const resumeSchema = new mongoose.Schema(
   }
 );
 
-// Prevent duplicate resume per template per user
-resumeSchema.index({ userId: 1, templateId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Resume", resumeSchema);

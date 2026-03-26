@@ -1,29 +1,30 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { 
   ArrowLeft, Download, Plus, Trash2, Loader2, 
   Users2, HeartHandshake, Briefcase, GraduationCap, ShieldCheck, Database, CheckCircle2 
 } from 'lucide-react';
 
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
+    <label className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
-      id={name}
-      name={name}
       value={value} 
-      onChange={onChange} 
+      onChange={(e) => onChange(e.target.value)} 
       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#87CEEB] transition-all font-medium text-slate-700" 
     />
   </div>
 );
 
-export default function ClientRelationsExpertTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function ClientRelationsExpertTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
-  // // const { templateId } = useParams(); // Now received via props // Now received via props
+  const { templateId } = useParams();
   const previewRef = useRef();
   
   const templateConfig = {
@@ -50,79 +51,57 @@ export default function ClientRelationsExpertTemplate({ templateId, saveResume, 
   // MASTER PATTERN STATE MANAGEMENT
   const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
-  const [savedCvNumber, setSavedCvNumber] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false); // Explicit tracking
-   // UX Guardrail
-   // Success state
-   // Sync ID
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
 
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
-    const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
-    setData(prev => ({ ...prev, [arrayName]: newArray }));
+  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+  const handleArrayChange = (index, field, value, arrayName) => { 
+    const newArray = [...data[arrayName]]; 
+    newArray[index][field] = value; 
+    setData(prev => ({ ...prev, [arrayName]: newArray })); 
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  // Handshake & Sync Logic
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const cvNumber = await saveResume(data);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
       if (cvNumber) {
-        setSavedCvNumber(cvNumber);
-        // Background PDF Upload to Cloudinary
-        try {
-          const element = previewRef.current;
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `${data.firstName}_Resume.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(element)
-            .outputPdf('blob');
-
-          const formData = new FormData();
-          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-          formData.append("cvNumber", cvNumber);
-
-          await api.post("/resume-upload/resume-pdf", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-        } catch (uploadError) {
-          console.error("Background PDF upload failed:", uploadError);
-        }
-        setShowSaveSuccessModal(true);
+        setGeneratedCvNumber(cvNumber);
+        setShowSuccessModal(true);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save resume. Please try again.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => {
-    const element = previewRef.current;
-    const opt = {
-      margin: 0,
-      filename: `${data.firstName}_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    if (element) {
-      html2pdf().set(opt).from(element).save();
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
     }
   };
 
-return (
+  return (
     <div className="fixed inset-0 bg-[#f8fafc] flex flex-col overflow-hidden font-sans text-slate-800 z-[60]">
       {/* MASTER TOOLBAR */}
       <div className="w-full bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-20 shadow-sm">
@@ -138,14 +117,29 @@ return (
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-white border border-slate-200 text-slate-500 px-4 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />} 
-            Sync Draft
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border"
+          >
+            {isSaving ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Save className="mr-2" />
+            )}
+
+            {generatedCvNumber || cvNumber ? "Update" : "Save"}
           </button>
-          <button onClick={downloadPDF} disabled={isDownloading} className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50">
-            {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} 
-            Export Portfolio
+          <button
+            onClick={() => handlePdfDownload(generatedCvNumber)}
+            disabled={!generatedCvNumber}
+            className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md ${generatedCvNumber
+              ? "bg-green-600 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+          >
+            <Download className="mr-2" /> PDF
           </button>
         </div>
       </div>
@@ -158,18 +152,18 @@ return (
                    <Users2 size={16} className="text-[#87CEEB]"/> Account Identity
                 </h3>
                 <div className="grid grid-cols-2 gap-5">
-                    <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
-                    <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
-                    <InputGroup label="Professional Rank" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
-                    <InputGroup label="Direct Email" name="email" value={data.email} onChange={handleInputChange}/>
-                    <InputGroup label="Secure Line" name="phone" value={data.phone} onChange={handleInputChange}/>
-                    <InputGroup label="Primary Territory" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
+                    <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
+                    <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
+                    <InputGroup label="Professional Rank" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
+                    <InputGroup label="Direct Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
+                    <InputGroup label="Secure Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
+                    <InputGroup label="Primary Territory" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
                 </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-4">Professional Value Prop</h3>
-                <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#87CEEB] outline-none text-slate-600 italic leading-relaxed shadow-inner bg-slate-50/30"/>
+                <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#87CEEB] outline-none text-slate-600 italic leading-relaxed shadow-inner bg-slate-50/30"/>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
@@ -181,19 +175,18 @@ return (
                     <div key={i} className="mb-6 p-5 border border-slate-100 rounded-2xl bg-slate-50/50 relative group shadow-sm transition-all hover:shadow-md">
                         <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
                         <div className="grid grid-cols-2 gap-4">
-                            <InputGroup label="Rank" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                            <InputGroup label="Client/Company" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                            <InputGroup label="Tenure" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
-                            <textarea rows={3} placeholder="Focus on retention rates and dispute resolution metrics..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:ring-1 focus:ring-sky-200 outline-none"/>
+                            <InputGroup label="Rank" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
+                            <InputGroup label="Client/Company" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
+                            <InputGroup label="Tenure" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
+                            <textarea rows={3} placeholder="Focus on retention rates and dispute resolution metrics..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:ring-1 focus:ring-sky-200 outline-none"/>
                         </div>
                     </div>
                  ))}
             </div>
         </div>
 
-        {/* PREVIEW PANEL */}
         <div className="w-1/2 bg-slate-300 flex justify-center overflow-y-auto p-12 custom-scrollbar shadow-inner">
-            <div ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
                 
                 <div style={{ height: '16px', backgroundColor: templateConfig.primaryColor, width: '100%' }}></div>
                 
@@ -257,34 +250,35 @@ return (
                     </section>
                 </div>
 
-                
+                {generatedCvNumber && (
+                  <div style={{ position: 'absolute', bottom: '25px', left: '0', right: '0', textAlign: 'center', opacity: 0.6 }}>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: '1px' }}>
+                      AUTHENTICATED RELATIONS EXPERT • {generatedCvNumber}
+                    </div>
+                  </div>
+                )}
             </div>
         </div>
       </div>
 
-      {/* MASTER CONFIRMATION MODAL */}
-      
+
 
       {/* MASTER SUCCESS MODAL */}
-      
-
-      {/* Save Success Modal */}
-      {showSaveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[40px] p-10 max-w-sm w-full text-center shadow-2xl border-b-[12px] border-[#87CEEB]">
+            <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <CheckCircle2 size={48}/>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
-            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
-            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
-              OK
+            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">Archive Success</h3>
+            <p className="text-slate-500 text-sm mb-8 px-4">Your relations expert profile has been certified and archived.</p>
+            <div className="bg-slate-50 py-4 rounded-2xl font-mono font-bold text-sky-700 mb-8 tracking-widest text-lg border border-slate-200 shadow-sm mx-4">{generatedCvNumber}</div>
+            <button onClick={() => setShowSuccessModal(false)} className="w-[80%] py-4 bg-[#87CEEB] text-slate-900 font-bold rounded-full shadow-lg hover:shadow-sky-100 transition-all uppercase text-xs tracking-widest mx-auto">
+              Done
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

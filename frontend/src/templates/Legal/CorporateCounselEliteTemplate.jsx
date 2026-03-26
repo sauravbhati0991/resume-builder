@@ -1,30 +1,30 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { 
-  ArrowLeft, Download, Plus, Trash2, Loader2, 
-  Mail, Phone, MapPin, Scale, Landmark, ShieldAlert, Award,
+  ArrowLeft, Download, Plus, Trash2, Loader2, Save,  Mail, Phone, MapPin, Scale, Landmark, ShieldAlert, Award,
   Database, CheckCircle2, Lock, FileText, Gavel
 } from 'lucide-react';
 
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-[0.15em]">{label}</label>
+    <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-[0.15em]">{label}</label>
     <input 
       type="text" 
-      id={name}
-      name={name}
       value={value} 
-      onChange={onChange} 
+      onChange={(e) => onChange(e.target.value)} 
       className="w-full rounded-lg border-2 border-slate-100 bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#00008B] transition-colors shadow-sm font-medium text-slate-700" 
     />
   </div>
 );
 
-export default function CorporateCounselEliteTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function CorporateCounselEliteTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
-  // // const { templateId } = useParams(); // Now received via props // Now received via props
+  const { templateId } = useParams();
   const previewRef = useRef();
   
   const templateConfig = {
@@ -49,78 +49,59 @@ export default function CorporateCounselEliteTemplate({ templateId, saveResume, 
   };
 
   // MASTER PATTERN STATE MANAGEMENT
-  const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
-  const [savedCvNumber, setSavedCvNumber] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false);
-      
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
-    const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
-    setData(prev => ({ ...prev, [arrayName]: newArray }));
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
+
+  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+  const handleArrayChange = (index, field, value, arrayName) => { 
+    const newArray = [...data[arrayName]]; 
+    newArray[index][field] = value; 
+    setData(prev => ({ ...prev, [arrayName]: newArray })); 
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  // SERVER-SIDE SYNC
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const cvNumber = await saveResume(data);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
       if (cvNumber) {
-        setSavedCvNumber(cvNumber);
-        // Background PDF Upload to Cloudinary
-        try {
-          const element = previewRef.current;
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `${data.firstName}_Resume.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(element)
-            .outputPdf('blob');
-
-          const formData = new FormData();
-          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-          formData.append("cvNumber", cvNumber);
-
-          await api.post("/resume-upload/resume-pdf", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-        } catch (uploadError) {
-          console.error("Background PDF upload failed:", uploadError);
-        }
-        setShowSaveSuccessModal(true);
+        setGeneratedCvNumber(cvNumber);
+        setShowSuccessModal(true);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save resume. Please try again.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => {
-    const element = previewRef.current;
-    const opt = {
-      margin: 0,
-      filename: `${data.firstName}_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    if (element) {
-      html2pdf().set(opt).from(element).save();
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
     }
   };
 
-return (
+  return (
     <div className="fixed inset-0 bg-slate-200 flex flex-col overflow-hidden font-sans text-slate-800 z-[60]">
       {/* ELITE HEADER */}
       <div className="w-full bg-slate-900 border-b border-slate-700 px-8 py-4 flex justify-between items-center z-20 shadow-2xl">
@@ -135,13 +116,27 @@ return (
         </div>
         
         <div className="flex items-center gap-4">
-          <button onClick={syncLegalVault} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 rounded bg-slate-800 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700">
-            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />} 
-            Vault Sync
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-6 py-2 rounded bg-slate-800 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700 shadow-sm"
+          >
+            {isSaving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            {generatedCvNumber || cvNumber ? "Update_Portal" : "Save_Draft"}
           </button>
-          <button onClick={downloadPDF} disabled={isDownloading} className="flex items-center gap-2 bg-[#00008B] text-white px-8 py-2 rounded font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:brightness-125 transition-all active:scale-95 disabled:opacity-50">
-            {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />} 
-            File Archive
+          <button
+            onClick={() => handlePdfDownload(generatedCvNumber)}
+            disabled={!generatedCvNumber}
+            className={`flex items-center gap-2 px-8 py-2 rounded font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 ${generatedCvNumber
+              ? "bg-[#00008B] text-white hover:brightness-125"
+              : "bg-slate-600 text-slate-400 cursor-not-allowed opacity-50"
+              }`}
+          >
+            <Download className="w-3.5 h-3.5" /> PDF_EXPORT
           </button>
         </div>
       </div>
@@ -154,18 +149,18 @@ return (
                    <ShieldAlert size={18} className="text-[#00008B]"/> Executive Identification
                 </h3>
                 <div className="grid grid-cols-2 gap-6">
-                    <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
-                    <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
-                    <InputGroup label="Official Designation" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
-                    <InputGroup label="Corporate Email" name="email" value={data.email} onChange={handleInputChange}/>
-                    <InputGroup label="Secure Line" name="phone" value={data.phone} onChange={handleInputChange}/>
-                    <InputGroup label="Jurisdiction/Base" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
+                    <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
+                    <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
+                    <InputGroup label="Official Designation" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
+                    <InputGroup label="Corporate Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
+                    <InputGroup label="Secure Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
+                    <InputGroup label="Jurisdiction/Base" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
                 </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-[#00008B]">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Strategic Summary</h3>
-                <textarea rows={5} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border-2 border-slate-100 rounded-xl p-4 text-sm focus:border-[#00008B] outline-none text-slate-700 bg-slate-50 font-medium leading-relaxed shadow-inner"/>
+                <textarea rows={5} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border-2 border-slate-100 rounded-xl p-4 text-sm focus:border-[#00008B] outline-none text-slate-700 bg-slate-50 font-medium leading-relaxed shadow-inner"/>
             </div>
 
             <div className="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-[#00008B]">
@@ -177,10 +172,10 @@ return (
                     <div key={i} className="mb-8 p-6 border-2 border-slate-50 rounded-2xl bg-slate-50/50 relative group transition-all hover:bg-white hover:shadow-md">
                         <button onClick={()=>removeExperience(i)} className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110"><Trash2 size={14}/></button>
                         <div className="grid grid-cols-2 gap-6">
-                            <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                            <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                            <InputGroup label="Timeline" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
-                            <textarea rows={3} placeholder="Focus on board advisement, M&A due diligence, and risk mitigation..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border-2 border-slate-100 rounded-xl p-4 text-sm text-slate-600 font-medium focus:border-blue-200 outline-none"/>
+                            <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
+                            <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
+                            <InputGroup label="Timeline" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
+                            <textarea rows={3} placeholder="Focus on board advisement, M&A due diligence, and risk mitigation..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border-2 border-slate-100 rounded-xl p-4 text-sm text-slate-600 font-medium focus:border-blue-200 outline-none"/>
                         </div>
                     </div>
                  ))}
@@ -188,8 +183,8 @@ return (
         </div>
 
         {/* PREVIEW CONTAINER */}
-        <div className="w-[55%] flex justify-center overflow-y-auto custom-scrollbar bg-slate-400/20 rounded-3xl p-12 shadow-inner">
-            <div ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.4)', fontFamily: '"Georgia", serif' }}>
+        <div className="w-[55%] flex justify-center overflow-y-auto custom-scrollbar bg-slate-400/20 rounded-3xl p-12 shadow-inner text-slate-800">
+            <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.4)', fontFamily: '"Georgia", serif' }}>
                 
                 {/* Elite Brand Header */}
                 <div style={{ padding: '60px 60px 40px', display: 'flex', justifyContent: 'space-between', borderBottom: `4px double ${templateConfig.primaryColor}` }}>
@@ -264,34 +259,32 @@ return (
                 </div>
 
                 {/* ELITE FOOTER */}
-                
+                {generatedCvNumber && (
+                  <div style={{ position: 'absolute', bottom: '30px', left: '60px', right: '60px', borderTop: '1px solid #f1f5f9', paddingTop: '15px', display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '8px', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'monospace' }}>RECORD_ID: {generatedCvNumber}</div>
+                    <div style={{ fontSize: '8px', color: '#00008B', fontWeight: '900', textTransform: 'uppercase' }}>Privileged & Confidential • Corporate Filing</div>
+                  </div>
+                )}
             </div>
         </div>
       </div>
 
-      {/* MASTER CONFIRMATION MODAL */}
-      
-
       {/* MASTER SUCCESS MODAL */}
-      
-
-      {/* Save Success Modal */}
-      {showSaveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 text-center">
+          <div className="bg-white rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl border-t-8 border-indigo-900">
+            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <CheckCircle2 size={40}/>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
-            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
-            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
-              OK
+            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">Archive Finalized</h3>
+            <p className="text-slate-500 text-sm mb-8 px-4">Your executive credentials have been archived and assigned a secure record ID.</p>
+            <div className="bg-slate-50 py-4 rounded-xl font-mono font-bold text-[#00008B] mb-8 tracking-widest text-lg border border-slate-100 shadow-sm mx-4">{generatedCvNumber}</div>
+            <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 bg-[#00008B] text-white font-bold rounded-xl shadow-lg transition-all uppercase text-xs tracking-widest">
+              Exit Console
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

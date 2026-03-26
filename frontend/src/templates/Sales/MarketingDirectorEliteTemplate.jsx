@@ -1,26 +1,27 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
-import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Mail, Phone, MapPin, Award, CheckCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Mail, Phone, MapPin, Award, CheckCircle2 } from 'lucide-react';
 
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
+    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
     <input 
       type="text" 
-      id={name}
-      name={name}
       value={value} 
-      onChange={onChange} 
+      onChange={(e) => onChange(e.target.value)} 
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-600 transition-shadow" 
     />
   </div>
 );
 
-export default function MarketingDirectorEliteTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function MarketingDirectorEliteTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
-  // // const { templateId } = useParams(); // Now received via props // Now received via props
+  const { templateId } = useParams();
   const previewRef = useRef();
   
   const templateConfig = {
@@ -46,77 +47,58 @@ export default function MarketingDirectorEliteTemplate({ templateId, saveResume,
 
   // MASTER PATTERN STATE
   const [isSaving, setIsSaving] = useState(false);
-  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
-  const [savedCvNumber, setSavedCvNumber] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false);
-        const [data, setData] = useState(initialData || templateConfig.defaultData);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
-    const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
-    setData(prev => ({ ...prev, [arrayName]: newArray }));
+  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+  const handleArrayChange = (index, field, value, arrayName) => { 
+    const newArray = [...data[arrayName]]; 
+    newArray[index][field] = value; 
+    setData(prev => ({ ...prev, [arrayName]: newArray })); 
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  // Standard Local Sync
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const cvNumber = await saveResume(data);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
       if (cvNumber) {
-        setSavedCvNumber(cvNumber);
-        // Background PDF Upload to Cloudinary
-        try {
-          const element = previewRef.current;
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `${data.firstName}_Resume.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(element)
-            .outputPdf('blob');
-
-          const formData = new FormData();
-          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-          formData.append("cvNumber", cvNumber);
-
-          await api.post("/resume-upload/resume-pdf", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-        } catch (uploadError) {
-          console.error("Background PDF upload failed:", uploadError);
-        }
-        setShowSaveSuccessModal(true);
+        setGeneratedCvNumber(cvNumber);
+        setShowSuccessModal(true);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save resume. Please try again.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => {
-    const element = previewRef.current;
-    const opt = {
-      margin: 0,
-      filename: `${data.firstName}_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    if (element) {
-      html2pdf().set(opt).from(element).save();
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
     }
   };
 
-return (
+  return (
     <div className="min-h-screen w-full bg-slate-100 flex flex-col overflow-hidden font-sans text-slate-900">
       
       {/* EXECUTIVE TOOLBAR */}
@@ -128,11 +110,28 @@ return (
                 <span className="font-bold text-slate-800 uppercase tracking-wider text-xs">Directorate Edition</span>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
-                    {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2 text-orange-600" />} Save Draft
+                <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm transition-all"
+                >
+                    {isSaving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                        <Save className="w-4 h-4 mr-2 text-orange-600" />
+                    )}
+                    {generatedCvNumber || cvNumber ? "Update_Mandate" : "Seal_Sync"}
                 </button>
-                <button onClick={downloadPDF} disabled={isDownloading} className="inline-flex items-center text-sm font-bold h-9 px-4 rounded-md text-white shadow-lg hover:brightness-110 disabled:opacity-70 transition-all" style={{ backgroundColor: templateConfig.primaryColor }}>
-                    {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Download className="w-4 h-4 mr-2" />} Finalize PDF
+                <button
+                    onClick={() => handlePdfDownload(generatedCvNumber)}
+                    disabled={!generatedCvNumber}
+                    className={`inline-flex items-center justify-center text-sm font-bold h-9 px-4 rounded-md text-white shadow-lg transition-all active:scale-95 ${generatedCvNumber
+                        ? "hover:brightness-110"
+                        : "bg-slate-300 cursor-not-allowed opacity-50"
+                        }`}
+                    style={{ backgroundColor: generatedCvNumber ? templateConfig.primaryColor : undefined }}
+                >
+                    <Download className="w-4 h-4 mr-2" /> PORTFOLIO_EXPORT
                 </button>
             </div>
         </div>
@@ -146,18 +145,18 @@ return (
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                     <h3 className="text-md font-bold mb-4 flex items-center gap-2 uppercase tracking-tight text-slate-700 underline decoration-orange-500 decoration-2 underline-offset-4">Executive Profile</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
-                        <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
-                        <InputGroup label="Directorship Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
-                        <InputGroup label="Work Email" name="email" value={data.email} onChange={handleInputChange}/>
-                        <InputGroup label="Contact Number" name="phone" value={data.phone} onChange={handleInputChange}/>
-                        <InputGroup label="HQ Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
+                        <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
+                        <InputGroup label="Directorship Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
+                        <InputGroup label="Work Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
+                        <InputGroup label="Contact Number" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
+                        <InputGroup label="HQ Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                     <h3 className="text-md font-bold mb-4 uppercase tracking-tight text-slate-700">Value Proposition (Summary)</h3>
-                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-orange-600 outline-none leading-relaxed"/>
+                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-orange-600 outline-none leading-relaxed"/>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
@@ -166,10 +165,10 @@ return (
                         <div key={i} className="mb-4 p-4 border border-slate-100 rounded-lg bg-slate-50 relative group">
                             <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-3">
-                                <InputGroup label="Executive Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                                <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                                <InputGroup label="Duration" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
-                                <textarea rows={3} value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-orange-600 outline-none"/>
+                                <InputGroup label="Executive Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
+                                <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
+                                <InputGroup label="Duration" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
+                                <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-orange-600 outline-none"/>
                             </div>
                         </div>
                      ))}
@@ -177,15 +176,14 @@ return (
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                     <h3 className="text-md font-bold mb-4 uppercase tracking-tight text-slate-700">Competencies & Pedigree</h3>
-                    <InputGroup label="Core Competencies (Comma separated)" name="skills" value={data.skills} onChange={handleInputChange}/>
+                    <InputGroup label="Core Competencies (Comma separated)" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
                     <div className="h-4"></div>
-                    <InputGroup label="Academic Credentials" name="education" value={data.education} onChange={handleInputChange}/>
+                    <InputGroup label="Academic Credentials" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
                 </div>
             </div>
 
-            {/* PREVIEW PANEL */}
             <div className="h-full bg-slate-300/50 rounded-xl overflow-auto flex justify-center p-8 custom-scrollbar">
-                <div ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                     
                     <div style={{ backgroundColor: templateConfig.primaryColor, color: 'white', padding: '45px 50px', borderBottom: `8px solid ${templateConfig.accentColor}` }}>
                         <h1 style={{ fontSize: '42px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', margin: 0 }}>
@@ -240,35 +238,32 @@ return (
                     </div>
 
                     {/* Elite Verification Footer */}
-                    
+                    {generatedCvNumber && (
+                      <div style={{ position: 'absolute', bottom: '15px', right: '30px', fontSize: '9px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                        PORTFOLIO ID: {generatedCvNumber} • VERIFICATION: resumea.com/verify/{generatedCvNumber}
+                      </div>
+                    )}
                 </div>
             </div>
         </div>
       </div>
 
-      {/* CONFIRMATION MODAL */}
-      
-
       {/* SUCCESS MODAL */}
-      
-
-      {/* Save Success Modal */}
-      {showSaveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border-t-8" style={{ borderColor: templateConfig.primaryColor }}>
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-100">
+              <CheckCircle2 size={32}/>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
-            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
-            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
-              OK
+            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase italic">Portfolio Secured</h3>
+            <p className="text-sm text-slate-500 mb-6 font-medium">Executive record serialized and archived. Unique Identifier:</p>
+            <div className="bg-slate-900 py-3 rounded-lg font-mono font-bold text-orange-400 mb-6 tracking-widest text-lg border-2 border-slate-800 shadow-inner">{generatedCvNumber}</div>
+            <button onClick={() => setShowSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold shadow-lg hover:opacity-90 transition-all active:scale-95" style={{ backgroundColor: templateConfig.primaryColor }}>
+              Return to Directorate
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

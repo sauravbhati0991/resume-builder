@@ -1,28 +1,28 @@
-import api from "../../utils/api";
-import { useParams } from "react-router-dom";
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import html2pdf from "html2pdf.js";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import { ArrowLeft, Save, Download, FileText, Plus, Trash2, Eye, Briefcase, GraduationCap, User, Code, Loader2, Mail, Phone, MapPin } from "lucide-react";
 
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
+    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
     <input
       type="text"
-      id={name}
-      name={name}
-      value={value} 
-      onChange={onChange}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
   </div>
 );
 
-export default function OfficeManagerProTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function OfficeManagerProTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
   const previewRef = useRef();
-  // // const { templateId } = useParams(); // Now received via props // Now received via props
+  const { templateId } = useParams();
 
   const templateConfig = {
     name: "Office Manager Pro",
@@ -59,19 +59,17 @@ export default function OfficeManagerProTemplate({ templateId, saveResume, downl
     }
   };
 
-  const [zoom, setZoom] = useState(0.8);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
-  const [savedCvNumber, setSavedCvNumber] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false);
-        const [data, setData] = useState(initialData || templateConfig.defaultData);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleInputChange = (field, value) =>
+    setData((prev) => ({ ...prev, [field]: value }));
 
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
+  const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
+    newArray[index][field] = value;
     setData((prev) => ({ ...prev, [arrayName]: newArray }));
   };
 
@@ -89,62 +87,46 @@ export default function OfficeManagerProTemplate({ templateId, saveResume, downl
       ...prev,
       experience: prev.experience.filter((_, i) => i !== index)
     }));
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
 
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const cvNumber = await saveResume(data);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
       if (cvNumber) {
-        setSavedCvNumber(cvNumber);
-        // Background PDF Upload to Cloudinary
-        try {
-          const element = previewRef.current;
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `${data.firstName}_Resume.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(element)
-            .outputPdf('blob');
-
-          const formData = new FormData();
-          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-          formData.append("cvNumber", cvNumber);
-
-          await api.post("/resume-upload/resume-pdf", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-        } catch (uploadError) {
-          console.error("Background PDF upload failed:", uploadError);
-        }
-        setShowSaveSuccessModal(true);
+        setGeneratedCvNumber(cvNumber);
+        setShowSuccessModal(true);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save resume. Please try again.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => {
-    const element = previewRef.current;
-    const opt = {
-      margin: 0,
-      filename: `${data.firstName}_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    if (element) {
-      html2pdf().set(opt).from(element).save();
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
     }
   };
 
-return (
+
+  return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4 flex justify-between items-center">
@@ -162,26 +144,25 @@ return (
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+              className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Save
+              {isSaving ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Save className="mr-2" />
+              )}
+
+              {generatedCvNumber || cvNumber ? "Update" : "Save"}
             </button>
             <button
-              onClick={downloadPDF}
-              disabled={isDownloading}
-              className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md hover:opacity-90 disabled:opacity-70"
-              style={{ backgroundColor: templateConfig.accentColor }}
+              onClick={() => handlePdfDownload(generatedCvNumber)}
+              disabled={!generatedCvNumber}
+              className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md ${generatedCvNumber
+                ? "bg-green-600 text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
             >
-              {isDownloading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" /> PDF
-                </>
-              )}
+              <Download className="mr-2" /> PDF
             </button>
           </div>
         </div>
@@ -194,12 +175,12 @@ return (
             <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
               <h3 className="text-lg font-bold mb-4">Personal Info</h3>
               <div className="grid grid-cols-2 gap-4">
-                <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange} />
-                <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange} />
-                <InputGroup label="Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2" />
-                <InputGroup label="Email" name="email" value={data.email} onChange={handleInputChange} />
-                <InputGroup label="Phone" name="phone" value={data.phone} onChange={handleInputChange} />
-                <InputGroup label="Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2" />
+                <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange("firstName", v)} />
+                <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange("lastName", v)} />
+                <InputGroup label="Title" value={data.title} onChange={(v) => handleInputChange("title", v)} className="col-span-2" />
+                <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange("email", v)} />
+                <InputGroup label="Phone" value={data.phone} onChange={(v) => handleInputChange("phone", v)} />
+                <InputGroup label="Location" value={data.location} onChange={(v) => handleInputChange("location", v)} className="col-span-2" />
               </div>
             </div>
 
@@ -208,7 +189,7 @@ return (
               <textarea
                 rows={4}
                 value={data.summary}
-                id="summary" name="summary" onChange={handleInputChange}
+                onChange={(e) => handleInputChange("summary", e.target.value)}
                 className="w-full border rounded-md p-2 text-sm"
               />
             </div>
@@ -229,13 +210,13 @@ return (
                     <Trash2 size={16} />
                   </button>
                   <div className="grid grid-cols-2 gap-3">
-                    <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)} />
-                    <InputGroup label="Company" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)} />
-                    <InputGroup label="Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2" />
+                    <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(i, "role", v, "experience")} />
+                    <InputGroup label="Company" value={exp.company} onChange={(v) => handleArrayChange(i, "company", v, "experience")} />
+                    <InputGroup label="Dates" value={exp.dates} onChange={(v) => handleArrayChange(i, "dates", v, "experience")} className="col-span-2" />
                     <textarea
                       rows={3}
                       value={exp.description}
-                      id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)}
+                      onChange={(e) => handleArrayChange(i, "description", e.target.value, "experience")}
                       className="col-span-2 border rounded p-2 text-sm"
                     />
                   </div>
@@ -245,15 +226,16 @@ return (
 
             <div className="bg-white rounded-xl shadow p-6 border border-gray-200">
               <h3 className="text-lg font-bold mb-4">Skills & Education</h3>
-              <InputGroup label="Skills" name="skills" value={data.skills} onChange={handleInputChange} />
+              <InputGroup label="Skills" value={data.skills} onChange={(v) => handleInputChange("skills", v)} />
               <div className="h-4"></div>
-              <InputGroup label="Education" name="education" value={data.education} onChange={handleInputChange} />
+              <InputGroup label="Education" value={data.education} onChange={(v) => handleInputChange("education", v)} />
             </div>
           </div>
 
           {/* PREVIEW */}
           <div className="h-full bg-slate-200 rounded-xl overflow-auto flex justify-center p-8 custom-scrollbar">
             <div
+              id="resume-preview"
               ref={previewRef}
               style={{
                 width: "210mm",
@@ -382,27 +364,32 @@ return (
         </div>
       </div>
 
-      
 
-      
 
-      {/* Save Success Modal */}
-      {showSaveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
-            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
-            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center">
+            <h3 className="text-lg font-bold text-green-700 mb-2">
+              Resume Saved Successfully
+            </h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Your latest resume has been uploaded and downloaded.
+            </p>
+            <p className="text-sm font-semibold text-gray-900 mb-6">
+              CV Number: {generatedCvNumber}
+            </p>
+
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="px-5 py-2 rounded-lg text-white"
+              style={{ backgroundColor: templateConfig.accentColor }}
+            >
               OK
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

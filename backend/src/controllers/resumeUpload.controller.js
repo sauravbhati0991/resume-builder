@@ -1,4 +1,5 @@
 const { uploadResumePDF } = require("../config/cloudinary");
+const cloudinary = require("cloudinary").v2; // ✅ ADD THIS
 const Resume = require("../models/Resume");
 
 exports.uploadResumePDFController = async (req, res) => {
@@ -26,20 +27,29 @@ exports.uploadResumePDFController = async (req, res) => {
       });
     }
 
-    // Upload PDF to Cloudinary with cvNumber as public_id
-    console.log(`[uploadResumePDFController] Starting upload for ${cvNumber}...`);
-    const upload = await uploadResumePDF(file, cvNumber);
-    const pdfUrl = upload.secure_url;
-    console.log(`[uploadResumePDFController] Uploaded! Cloudinary URL: ${pdfUrl}`);
+    // ====================================
+    // 🔥 1. DELETE OLD PDF (if exists)
+    // ====================================
+    if (resume.pdfPublicId) {
+      await cloudinary.uploader.destroy(resume.pdfPublicId);
+    }
 
-    // Save PDF URL in DB
-    resume.pdfUrl = pdfUrl;
+    // ====================================
+    // 🔥 2. UPLOAD NEW PDF
+    // ====================================
+    const upload = await uploadResumePDF(file);
+
+    // ====================================
+    // 🔥 3. SAVE BOTH URL + PUBLIC ID
+    // ====================================
+    resume.pdfUrl = upload.secure_url;
+    resume.pdfPublicId = upload.public_id; // ✅ IMPORTANT
+
     await resume.save();
-    console.log(`[uploadResumePDFController] DB Updated for ${cvNumber}`);
 
     return res.json({
       message: "PDF uploaded successfully",
-      pdfUrl
+      pdfUrl: upload.secure_url
     });
 
   } catch (err) {

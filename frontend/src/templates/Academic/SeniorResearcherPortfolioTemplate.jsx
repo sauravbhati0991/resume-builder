@@ -1,29 +1,31 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
+
 import { 
   ArrowLeft, Save, Download, Plus, Trash2, Loader2, 
   Mail, Phone, MapPin, Microscope, FileText, Fingerprint, Award 
 } from 'lucide-react';
 
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-[0.2em]">{label}</label>
+    <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-[0.2em]">{label}</label>
     <input 
       type="text" 
-      id={name}
-      name={name}
       value={value} 
-      onChange={onChange} 
+      onChange={(e) => onChange(e.target.value)} 
       className="w-full border-b border-slate-200 bg-transparent px-0 py-2 text-sm focus:outline-none focus:border-[#312e81] transition-colors" 
     />
   </div>
 );
 
-export default function SeniorResearcherPortfolioTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function SeniorResearcherPortfolioTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
-  // // const { templateId } = useParams(); // Now received via props // Now received via props
+  const { templateId } = useParams();
   const previewRef = useRef();
   
   const templateConfig = {
@@ -49,64 +51,56 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
 
   const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [cvArchiveId, setCvArchiveId] = useState("");
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
 
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
-    const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
-    setData(prev => ({ ...prev, [arrayName]: newArray }));
+  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
+  const handleArrayChange = (index, field, value, arrayName) => { 
+    const newArray = [...data[arrayName]]; 
+    newArray[index][field] = value; 
+    setData(prev => ({ ...prev, [arrayName]: newArray })); 
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  const finalizePortfolio = async () => {
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
+  const handleSave = async () => {
     try {
-      setIsArchiving(true);
-      
-      // 1. Generate Academic Archive Record
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Scientific Research",
-        resumeData: data
-      });
-
-      const archiveId = res.data.cvNumber;
-      setCvArchiveId(archiveId);
-
-      // 2. High-Fidelity PDF Generation
-      const opt = { 
-        margin: 0, 
-        filename: `Portfolio_Dr_${data.lastName}_${archiveId}.pdf`, 
-        image: { type: 'jpeg', quality: 1.0 }, 
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true }, 
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-      };
-
-      const worker = html2pdf().set(opt).from(previewRef.current);
-      const pdfBlob = await worker.output("blob");
-      
-      // 3. Asset Archival
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${archiveId}.pdf`);
-      formData.append("cvNumber", archiveId);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      await worker.save();
-      setShowSyncModal(true);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
+      if (cvNumber) {
+        setGeneratedCvNumber(cvNumber);
+        setShowSyncModal(true);
+      }
     } catch (err) {
-      console.error("Repository archival failed:", err);
+      console.error(err);
     } finally {
-      setIsArchiving(false);
+      setIsSaving(false);
     }
   };
+
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col overflow-hidden font-sans">
@@ -125,10 +119,29 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <button onClick={() => finalizePortfolio()} disabled={isArchiving} className="flex items-center gap-2 bg-[#312e81] text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-[#252361] transition-all active:scale-95 disabled:opacity-50">
-            {isArchiving ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} 
-            Finalize & Archive
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border"
+          >
+            {isSaving ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Save className="mr-2" />
+            )}
+
+            {generatedCvNumber || cvNumber ? "Update" : "Save"}
+          </button>
+          <button
+            onClick={() => handlePdfDownload(generatedCvNumber)}
+            disabled={!generatedCvNumber}
+            className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md ${generatedCvNumber
+              ? "bg-green-600 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+          >
+            <Download className="mr-2" /> PDF
           </button>
         </div>
       </div>
@@ -142,12 +155,12 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
                 <Fingerprint size={14}/> Identity & Location
               </h3>
               <div className="grid grid-cols-2 gap-8">
-                <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
-                <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
-                <InputGroup label="Official Designation" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
-                <InputGroup label="Institute Email" name="email" value={data.email} onChange={handleInputChange}/>
-                <InputGroup label="Direct Line" name="phone" value={data.phone} onChange={handleInputChange}/>
-                <InputGroup label="Laboratory Base" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
+                <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
+                <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
+                <InputGroup label="Official Designation" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
+                <InputGroup label="Institute Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
+                <InputGroup label="Direct Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
+                <InputGroup label="Laboratory Base" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
               </div>
             </section>
 
@@ -158,7 +171,7 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
               <textarea 
                 rows={5} 
                 value={data.summary} 
-                id="summary" name="summary" onChange={handleInputChange} 
+                onChange={(e)=>handleInputChange('summary', e.target.value)} 
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl p-5 text-sm leading-relaxed text-slate-600 italic focus:outline-none focus:ring-2 focus:ring-[#312e81]/10 transition-all"
               />
             </section>
@@ -173,10 +186,10 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
                   <div key={i} className="p-6 border border-slate-100 rounded-2xl relative group bg-white shadow-sm">
                     <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
                     <div className="grid grid-cols-2 gap-6">
-                      <InputGroup label="Rank" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                      <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
-                      <InputGroup label="Tenure Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
-                      <textarea rows={3} value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 text-sm border-b border-slate-100 p-2 focus:outline-none focus:border-[#312e81]"/>
+                      <InputGroup label="Rank" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
+                      <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
+                      <InputGroup label="Tenure Dates" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
+                      <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 text-sm border-b border-slate-100 p-2 focus:outline-none focus:border-[#312e81]"/>
                     </div>
                   </div>
                 ))}
@@ -185,9 +198,12 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
           </div>
         </div>
 
-        {/* PREVIEW SECTION */}
         <div className="w-1/2 bg-slate-200 overflow-y-auto flex justify-center p-12 custom-scrollbar">
-          <div ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', position: 'relative', boxShadow: '0 30px 60px -12px rgba(0,0,0,0.25)' }}>
+          <div 
+            id="resume-preview"
+            ref={previewRef} 
+            style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', position: 'relative', boxShadow: '0 30px 60px -12px rgba(0,0,0,0.25)' }}>
+
             
             {/* Indigo Command Column */}
             <div style={{ width: '38%', backgroundColor: templateConfig.primaryColor, color: 'white', padding: '50px 35px', display: 'flex', flexDirection: 'column' }}>
@@ -251,9 +267,9 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
             </div>
 
             {/* SCHOLAR VERIFICATION BAR */}
-            {cvArchiveId && (
+            {(generatedCvNumber || cvNumber) && (
               <div style={{ position: 'absolute', bottom: '40px', left: '38%', width: '62%', padding: '0 50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.5 }}>
-                <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', fontFamily: 'monospace' }}>SECURE_ARCHIVE_ID: {cvArchiveId}</span>
+                <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', fontFamily: 'monospace' }}>SECURE_ARCHIVE_ID: {generatedCvNumber || cvNumber}</span>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#6366f1' }}></div>
                   <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#6366f1' }}></div>
@@ -277,7 +293,7 @@ export default function SeniorResearcherPortfolioTemplate({ templateId, saveResu
             <div className="bg-slate-50 rounded-2xl p-6 mb-10 border border-slate-100 flex items-center justify-between">
                <div className="text-left">
                   <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Archive Reference</p>
-                  <p className="text-2xl font-mono font-bold text-[#312e81]">{cvArchiveId}</p>
+                  <p className="text-2xl font-mono font-bold text-[#312e81]">{generatedCvNumber}</p>
                </div>
                <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100">
                   <Fingerprint size={24} className="text-[#312e81]"/>

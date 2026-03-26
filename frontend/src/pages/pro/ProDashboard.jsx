@@ -54,7 +54,9 @@ export default function ProDashboard() {
     try {
       const { data } = await api.get(`/resumes/cv/${cv}`);
 
-      if (data?.cvNumber) {
+      if (data?.pdfUrl) {
+        window.open(data.pdfUrl, "_blank");
+      } else if (data?.cvNumber) {
         window.open(
           `${import.meta.env.VITE_API_BASE_URL}/resumes/view/${data.cvNumber}`,
           "_blank"
@@ -215,8 +217,13 @@ export default function ProDashboard() {
                       {/* DOWNLOAD — uses backend proxy for forced attachment */}
                       <button
                         onClick={() => {
-                          const downloadUrl = `${import.meta.env.VITE_API_BASE_URL}/resumes/download/${resume.cvNumber}`;
-                          window.open(downloadUrl, "_blank");
+                          console.log("Download clicked for resume:", resume.cvNumber, "pdfUrl:", resume.pdfUrl);
+                          if (resume.pdfUrl) {
+                            window.open(resume.pdfUrl, "_blank");
+                          } else {
+                            const downloadUrl = `${import.meta.env.VITE_API_BASE_URL}/resumes/download/${resume.cvNumber}`;
+                            window.open(downloadUrl, "_blank");
+                          }
                         }}
                         title="Download PDF"
                         className="text-xs font-bold px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"

@@ -1,18 +1,36 @@
-import { useState, useRef } from "react";
-import api from "../../utils/api";
-import { useNavigate } from "react-router-dom";
-import html2pdf from "html2pdf.js";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import api from "../utils/api";
 import { 
-  ArrowLeft, Save, Download, FileText, Plus, Trash2, Eye, 
-  Briefcase, GraduationCap, User, Code, Loader2
+  ArrowLeft, 
+  Save, 
+  Download, 
+  FileText, 
+  Plus, 
+  Trash2, 
+  Eye, 
+  Briefcase, 
+  GraduationCap, 
+  User, 
+  Code, 
+  Loader2,
+  Mail,
+  Phone,
+  MapPin,
+  CheckCircle2
 } from 'lucide-react';
 
 // Importing your existing utils
 // import { getTheme } from "../utils/themesEngine";
 // import { renderHeader, renderSection } from "../utils/layoutEngine";
 
-export default function MinimalTemplate({ templateId, saveResume, downloadResume, initialData }) {
+export default function MinimalTemplate({
+  saveAndGeneratePDF,
+  initialData,
+  cvNumber
+}) {
   const navigate = useNavigate();
+  const { templateId } = useParams();
   const previewRef = useRef();
   
   // --- CONFIGURATION: COLORS & DEFAULTS ---
@@ -37,36 +55,20 @@ export default function MinimalTemplate({ templateId, saveResume, downloadResume
   };
 
   // UI State
-  const [activeTab, setActiveTab] = useState("editor");
   const [zoom, setZoom] = useState(0.8);
   const [isSaving, setIsSaving] = useState(false);
-  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
-  const [savedCvNumber, setSavedCvNumber] = useState("");
-
-  // Resume Data State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
   const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  // Section Order
-  const [sections, setSections] = useState(["summary", "skills", "experience", "education"]);
-
-  // Theme State - Merging your utils theme with custom colors
-  const baseTheme = getTheme("modern");
-  const theme = {
-    ...baseTheme,
-    colors: {
-      primary: templateConfig.primaryColor,
-      accent: templateConfig.accentColor,
-      text: "#333333"
-    }
+  // --- Handlers ---
+  const handleInputChange = (field, value) => {
+    setData(prev => ({ ...prev, [field]: value }));
   };
 
-  // --- Handlers ---
-  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleArrayChange = (index, arrayName, e) => {
-    const { name, value } = e.target;
+  const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
-    newArray[index][name] = value;
+    newArray[index][field] = value;
     setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
 
@@ -84,61 +86,45 @@ export default function MinimalTemplate({ templateId, saveResume, downloadResume
     }));
   };
 
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const cvNumber = await saveResume(data);
+      setIsSaving(true);
+      const cvNumber = await saveAndGeneratePDF(data);
       if (cvNumber) {
-        setSavedCvNumber(cvNumber);
-        // Background PDF Upload to Cloudinary
-        try {
-          const element = previewRef.current;
-          const pdfBlob = await html2pdf()
-            .set({
-              margin: 0,
-              filename: `${data.firstName}_Resume.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            })
-            .from(element)
-            .outputPdf('blob');
-
-          const formData = new FormData();
-          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-          formData.append("cvNumber", cvNumber);
-
-          await api.post("/resume-upload/resume-pdf", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
-        } catch (uploadError) {
-          console.error("Background PDF upload failed:", uploadError);
-        }
-        setShowSaveSuccessModal(true);
+        setGeneratedCvNumber(cvNumber);
+        setShowSuccessModal(true);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save resume. Please try again.");
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => {
-    const element = previewRef.current;
-    const opt = {
-      margin: 0,
-      filename: `${data.firstName}_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    if (element) {
-      html2pdf().set(opt).from(element).save();
+  const handlePdfDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("PDF download failed", err);
     }
   };
 
-return (
+  return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
       
       {/* --- Header / Toolbar --- */}
@@ -170,22 +156,31 @@ return (
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />}
-                Save
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+
+                {generatedCvNumber || cvNumber ? "Update_Sync" : "Save_Draft"}
               </button>
-              
-              <button 
-                onClick={downloadPDF}
-                className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-opacity hover:opacity-90"
-                style={{ backgroundColor: templateConfig.accentColor }}
+              <button
+                onClick={() => handlePdfDownload(generatedCvNumber)}
+                disabled={!generatedCvNumber}
+                className={`inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-all ${generatedCvNumber
+                  ? "hover:opacity-90"
+                  : "bg-slate-300 cursor-not-allowed opacity-50"
+                  }`}
+                style={{
+                  backgroundColor: generatedCvNumber ? templateConfig.accentColor : undefined
+                }}
               >
-                <Download className="w-4 h-4 mr-2" />
-                Download PDF
+                <Download className="w-4 h-4 mr-2" /> Download PDF
               </button>
             </div>
 
@@ -208,12 +203,12 @@ return (
                   <h3>Personal Information</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
-                  <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
-                  <InputGroup label="Job Title" name="title" value={data.title} onChange={handleInputChange} className="md:col-span-2"/>
-                  <InputGroup label="Email" name="email" value={data.email} onChange={handleInputChange}/>
-                  <InputGroup label="Phone" name="phone" value={data.phone} onChange={handleInputChange}/>
-                  <InputGroup label="Location" name="location" value={data.location} onChange={handleInputChange} className="md:col-span-2"/>
+                  <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
+                  <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
+                  <InputGroup label="Job Title" value={data.title} onChange={(v) => handleInputChange('title', v)} className="md:col-span-2" />
+                  <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
+                  <InputGroup label="Phone" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
+                  <InputGroup label="Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="md:col-span-2" />
                 </div>
               </div>
 
@@ -226,7 +221,7 @@ return (
                 <textarea 
                   rows={4}
                   value={data.summary}
-                  id="summary" name="summary" onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('summary', e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Briefly describe your professional background..."
                 />
@@ -258,15 +253,15 @@ return (
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(index,'experience',e)}/>
-                        <InputGroup label="Company" name="company" value={exp.company} onChange={(e)=>handleArrayChange(index,'experience',e)}/>
-                        <InputGroup label="Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(index,'experience',e)} className="md:col-span-2"/>
+                        <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(index, 'role', v, 'experience')} />
+                        <InputGroup label="Company" value={exp.company} onChange={(v) => handleArrayChange(index, 'company', v, 'experience')} />
+                        <InputGroup label="Dates" value={exp.dates} onChange={(v) => handleArrayChange(index, 'dates', v, 'experience')} className="md:col-span-2" />
                         <div className="md:col-span-2">
                           <label className="text-xs font-medium text-gray-500 mb-1 block">Description</label>
                           <textarea 
                             rows={3}
                             value={exp.description}
-                            id="description" name="description" onChange={(e)=>handleArrayChange(index,'experience',e)}
+                            onChange={(e) => handleArrayChange(index, 'description', e.target.value, 'experience')}
                             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
@@ -285,7 +280,7 @@ return (
                 <textarea 
                   rows={3}
                   value={data.skills}
-                  id="skills" name="skills" onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('skills', e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Java, Python, React, etc."
                 />
@@ -300,7 +295,7 @@ return (
                 <textarea 
                   rows={3}
                   value={data.education}
-                  id="education" name="education" onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('education', e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -345,42 +340,67 @@ return (
                     minHeight: '297mm', 
                   }}
                 >
-                  <div ref={previewRef} className={`h-full w-full p-8 ${theme.bg || ''} ${theme.text || ''}`}>
-                    
-                    {/* Header with Dynamic Theme */}
-                    {renderHeader("modern", { data, theme: { ...theme, colors: { primary: templateConfig.primaryColor, accent: templateConfig.accentColor } } })}
-                    
-                    {sections.map((section) => (
-                      <div key={section} className="mb-4">
-                        {(() => {
-                           const sectionProps = { 
-                             theme: { ...theme, colors: { primary: templateConfig.primaryColor, accent: templateConfig.accentColor } } 
-                           };
-
-                          switch (section) {
-                            case "summary":
-                              return data.summary ? renderSection("classic", { title: "Summary", children: data.summary, ...sectionProps }) : null;
-                            case "skills":
-                              return data.skills ? renderSection("classic", { title: "Skills", children: data.skills, ...sectionProps }) : null;
-                            case "experience":
-                              return data.experience.length > 0 ? renderSection("classic", { 
-                                title: "Experience", 
-                                ...sectionProps,
-                                children: data.experience.map((job, i) => (
-                                  <div key={i} className="mb-3">
-                                    <div className="font-semibold" style={{ color: templateConfig.accentColor }}>{job.role}</div>
-                                    <div className="text-sm opacity-75">{job.company} | {job.dates}</div>
-                                    <p className="text-sm mt-1 whitespace-pre-wrap">{job.description}</p>
-                                  </div>
-                                )) 
-                              }) : null;
-                            case "education":
-                              return data.education ? renderSection("classic", { title: "Education", children: data.education, ...sectionProps }) : null;
-                            default: return null;
-                          }
-                        })()}
+                  <div id="resume-preview" ref={previewRef} className="h-full w-full p-10 bg-white font-sans text-slate-800">
+                    {/* Header */}
+                    <div className="mb-8 border-b-2 pb-6" style={{ borderColor: templateConfig.primaryColor }}>
+                      <h1 className="text-4xl font-black uppercase tracking-tighter mb-2 italic">
+                        {data.firstName} <span style={{ color: templateConfig.primaryColor }}>{data.lastName}</span>
+                      </h1>
+                      <div className="flex justify-between items-center text-sm font-medium text-slate-500 uppercase tracking-widest">
+                        <span>{data.title}</span>
+                        <div className="flex gap-4">
+                          <span>{data.location}</span>
+                          <span>{data.email}</span>
+                        </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Summary */}
+                    <section className="mb-8">
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-3 opacity-50">Profile</h3>
+                      <p className="text-sm leading-relaxed text-slate-700">{data.summary}</p>
+                    </section>
+
+                    {/* Experience */}
+                    <section className="mb-8">
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-50">Experience</h3>
+                      {data.experience.map((job, i) => (
+                        <div key={i} className="mb-6 last:mb-0">
+                          <div className="flex justify-between items-baseline mb-1">
+                            <h4 className="font-bold text-lg">{job.role}</h4>
+                            <span className="text-xs font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-500">{job.dates}</span>
+                          </div>
+                          <div className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: templateConfig.primaryColor }}>
+                            {job.company}
+                          </div>
+                          <p className="text-sm text-slate-600 leading-relaxed">{job.description}</p>
+                        </div>
+                      ))}
+                    </section>
+
+                    {/* Grid for Skills and Ed */}
+                    <div className="grid grid-cols-2 gap-10">
+                      <section>
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-50">Competencies</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {data.skills.split(',').map((skill, i) => (
+                            <span key={i} className="text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-slate-100 rounded text-slate-600 border border-slate-200">
+                              {skill.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </section>
+                      <section>
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 opacity-50">Education</h3>
+                        <p className="text-sm font-bold text-slate-700 leading-relaxed italic">{data.education}</p>
+                      </section>
+                    </div>
+
+                    {generatedCvNumber && (
+                      <div className="mt-12 pt-6 border-t border-slate-100 text-[10px] text-slate-400 font-mono text-center">
+                        Verified at resumea.com/verify/{generatedCvNumber}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -399,38 +419,41 @@ return (
 
         </div>
       </div>
-
-      {/* Save Success Modal */}
-      {showSaveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-md text-center">
+          <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-2xl border-t-8 border-blue-600">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <CheckCircle2 size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
-            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
-            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
-            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
-              OK
+            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Record Synchronized</h3>
+            <p className="text-sm text-slate-500 mb-8 font-medium italic underline decoration-blue-600/30 underline-offset-4 tracking-wide">
+              Credentials successfully serialized and archived to the secure registry.
+            </p>
+            <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-6 rounded-xl mb-8 font-mono">
+              <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-2 text-center">Registry ID</p>
+              <p className="text-3xl font-black text-blue-700 tracking-tighter text-center">{generatedCvNumber}</p>
+            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-4 rounded-xl bg-slate-900 text-white font-black uppercase shadow-xl hover:opacity-90 transition-all text-xs tracking-widest"
+            >
+              Return to Station
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
 // Simple Helper Component for Inputs
-const InputGroup = ({ label, name, value, onChange, className = "" }) => (
+const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
-    <label htmlFor={name} className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
+    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
     <input 
       type="text" 
-      id={name}
-      name={name}
       value={value} 
-      onChange={onChange}
+      onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
     />
   </div>

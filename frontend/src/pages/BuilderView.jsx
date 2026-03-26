@@ -1,59 +1,48 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useLocation, useSearchParams } from "react-router-dom";
 import api from "../utils/api";
 import { CATEGORY_TEMPLATE_MAP, SPECIFIC_TEMPLATE_MAP } from "../templates/registry";
 import { Loader2 } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import { saveResumeData } from "../services/resumeService";
 
 export default function BuilderView() {
-
   const { templateId } = useParams();
-  const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const cvNumber = searchParams.get("cv");
 
   const [loading, setLoading] = useState(true);
   const [SelectedComponent, setSelectedComponent] = useState(null);
   const [templateInfo, setTemplateInfo] = useState(null);
-
-  const templatesBasePath = location.pathname.startsWith("/stu")
-    ? "/stu/templates"
-    : location.pathname.startsWith("/pro")
-    ? "/pro/templates"
-    : "/templates";
-
+  const [initialData, setInitialData] = useState(null);
+  const [currentCvNumber, setCurrentCvNumber] = useState(
+    searchParams.get("cv")
+  );
 
   /**
-   * SAVE RESUME DATA
+   * SAVE + GENERATE + UPLOAD PDF
    */
-  const saveResume = async (resumeData) => {
+  const saveAndGeneratePDF = async (resumeData) => {
     try {
-      const cvNumber = await saveResumeData(
+      // 1. Save resume
+      const res = await api.post("/resumes", {
         templateId,
-        templateInfo?.name || "",
-        templateInfo?.category?.name || "",
-        resumeData
-      );
-      return cvNumber;
-    } catch (err) {
-      console.error("Resume save failed", err);
-      alert("Failed to save resume");
-    }
-  };
+        templateName: templateInfo?.name || "",
+        categoryName: templateInfo?.category?.name || "",
+        resumeData,
+        cvNumber: currentCvNumber
+      });
 
+      const newCvNumber = res.data.cvNumber;
 
-  /**
-   * DOWNLOAD + UPLOAD PDF
-   */
-  const downloadResume = async (resumeData) => {
+      if (!newCvNumber) return null;
 
-    try {
+      setCurrentCvNumber(newCvNumber);
 
-      const cvNumber = await saveResume(resumeData);
-
-      if (!cvNumber) return;
-
+      // 2. Generate PDF
       const element = document.getElementById("resume-preview");
+
+      if (!element) throw new Error("Resume preview not found");
 
       const pdfBlob = await html2pdf()
         .set({
@@ -65,55 +54,39 @@ export default function BuilderView() {
         .from(element)
         .outputPdf("blob");
 
-
-      // download locally
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${cvNumber}.pdf`;
-      a.click();
-
-
-      // upload to backend
+      // 3. Upload PDF
       const formData = new FormData();
-      formData.append("pdf", pdfBlob);
-      formData.append("cvNumber", cvNumber);
+      formData.append("file", pdfBlob);
+      formData.append("cvNumber", newCvNumber);
 
-      await api.post("/resumes/upload-pdf", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
+      await api.post("/resume-upload/resume-pdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      console.log("PDF uploaded successfully");
+      return newCvNumber;
 
     } catch (err) {
-
-      console.error("Download failed", err);
-
+      console.error("Save + PDF failed", err);
+      return null;
     }
-
   };
 
-
   /**
-   * LOAD TEMPLATE
+   * LOAD TEMPLATE + EDIT DATA
    */
   useEffect(() => {
-
-    const fetchTemplateAndLoadBuilder = async () => {
-
+    const init = async () => {
       try {
-
         setLoading(true);
 
         const { data: template } = await api.get(`/templates/${templateId}`);
-
-        if (!template || !template.category) {
-          throw new Error("Template or Category data missing");
-        }
-
         setTemplateInfo(template);
+
+        // edit mode
+        if (cvNumber) {
+          const { data } = await api.get(`/resumes/cv/${cvNumber}`);
+          setInitialData(data?.resumeData);
+        }
 
         const categoryId =
           typeof template.category === "object"
@@ -126,70 +99,35 @@ export default function BuilderView() {
           Component = CATEGORY_TEMPLATE_MAP[categoryId];
         }
 
-        if (Component) {
-          setSelectedComponent(() => Component);
-        }
+        setSelectedComponent(() => Component);
 
-      } catch (error) {
-
-        console.error("Error loading builder:", error);
-
+      } catch (err) {
+        console.error("Builder load error", err);
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
-    if (templateId) {
-      fetchTemplateAndLoadBuilder();
-    }
+    if (templateId) init();
+  }, [templateId, cvNumber]);
 
-  }, [templateId]);
-
-
-  /**
-   * LOADING SCREEN
-   */
   if (loading) {
-
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-      </div>
-    );
-
-  }
-
-
-  /**
-   * BUILDER NOT FOUND
-   */
-  if (!SelectedComponent) {
-
     return (
       <div className="h-screen flex items-center justify-center">
-        Builder Not Found
+        <Loader2 className="animate-spin" />
       </div>
     );
-
   }
 
-
-  /**
-   * RENDER BUILDER
-   */
-  // Read resume data from navigation state (Edit mode)
-  const initialData = location.state?.resumeData || null;
+  if (!SelectedComponent) {
+    return <div>Builder Not Found</div>;
+  }
 
   return (
     <SelectedComponent
-      templateId={templateId}
-      saveResume={saveResume}
-      downloadResume={downloadResume}
+      saveAndGeneratePDF={saveAndGeneratePDF}
       initialData={initialData}
+      cvNumber={currentCvNumber}
     />
   );
-
 }
