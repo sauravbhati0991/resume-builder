@@ -25,6 +25,12 @@ export default function StudentDashboard() {
   const [cvNumber, setCvNumber] = useState("");
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState("");
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3500);
+  };
 
   // ===============================
   // FETCH USER RESUMES
@@ -100,6 +106,13 @@ export default function StudentDashboard() {
 
   return (
     <section className="min-h-screen bg-[#F7FBFF] flex flex-col">
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl">
+          {toast}
+        </div>
+      )}
 
       <div className="mx-auto w-full max-w-6xl px-5 py-10 flex-1">
 
@@ -218,33 +231,34 @@ export default function StudentDashboard() {
 
                     <div className="flex gap-2">
 
-                      {/* FETCH */}
+                      {/* EDIT */}
                       <button
                         onClick={() => {
-                          setCvNumber(resume.cvNumber);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          navigate(`/stu/builder/${resume.templateId}`, {
+                            state: { resumeData: resume.resumeData }
+                          });
                         }}
-                        className="text-xs font-bold px-3 py-1 bg-blue-600 text-white rounded-lg"
+                        className="text-xs font-bold px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        Fetch
+                        Edit
                       </button>
 
-                      {/* DOWNLOAD */}
-                      {resume.pdfUrl && (
-                        <a
-                          href={`${import.meta.env.VITE_API_BASE_URL}/resumes/view/${resume.cvNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-bold px-3 py-1 bg-green-600 text-white rounded-lg"
-                        >
-                          Download
-                        </a>
-                      )}
+                      {/* DOWNLOAD — uses backend proxy for forced attachment */}
+                      <button
+                        onClick={() => {
+                          const downloadUrl = `${import.meta.env.VITE_API_BASE_URL}/resumes/download/${resume.cvNumber}`;
+                          window.open(downloadUrl, "_blank");
+                        }}
+                        title="Download PDF"
+                        className="text-xs font-bold px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      >
+                        ⬇ Download
+                      </button>
 
                       {/* DELETE */}
                       <button
                         onClick={() => deleteResume(resume._id)}
-                        className="text-xs font-bold px-3 py-1 bg-red-500 text-white rounded-lg"
+                        className="text-xs font-bold px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                       >
                         Delete
                       </button>

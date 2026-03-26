@@ -50,7 +50,7 @@ const PricingPlans = () => {
               </ul>
 
               <button
-                onClick={() => navigate("/onboarding/intro")}
+                onClick={() => navigate("/payment", { state: { amount: 10, planName: "Student" } })}
                 className="mt-6 sm:mt-8 w-full bg-black text-white py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold hover:opacity-95 transition"
               >
                 Get Started
@@ -88,7 +88,7 @@ const PricingPlans = () => {
               </ul>
 
               <button
-                onClick={() => navigate("/onboarding/intro")}
+                onClick={() => navigate("/payment", { state: { amount: 99, planName: "Professional" } })}
                 className="mt-6 sm:mt-8 w-full border border-gray-400 bg-white text-gray-800 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold hover:bg-gray-50 transition"
               >
                 Get Started

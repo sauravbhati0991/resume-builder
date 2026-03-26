@@ -83,12 +83,14 @@ export default function StudentPrintCenters() {
       const overpassQuery = `
         [out:json];
         (
-          node["amenity"="internet_cafe"](around:3000,${userLoc.lat},${userLoc.lng});
-          node["shop"="copyshop"](around:3000,${userLoc.lat},${userLoc.lng});
-          node["shop"="printing"](around:3000,${userLoc.lat},${userLoc.lng});
-          node["shop"="stationery"](around:3000,${userLoc.lat},${userLoc.lng});
+          node["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
+          way["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
+          node["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
+          way["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
+          node["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
+          way["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
         );
-        out;
+        out center;
       `;
 
       try {
@@ -99,14 +101,27 @@ export default function StudentPrintCenters() {
 
         const data = await res.json();
 
-        const formatted = data.elements.map((el) => ({
-          id: el.id,
-          name: el.tags?.name || "Print Center",
-          address: el.tags?.addr_street || "Address not available",
-          phone: el.tags?.phone || "",
-          lat: el.lat,
-          lng: el.lon,
-        }));
+        const formatted = data.elements.map((el) => {
+          const tags = el.tags || {};
+          let name = tags.name;
+
+          // Fallback naming based on tags if name is missing
+          if (!name) {
+            if (tags.amenity === "internet_cafe") name = "Cybercenter";
+            else if (tags.shop === "copyshop") name = "Xerox Shop";
+            else if (tags.shop === "printing") name = "Print Shop";
+            else name = "Print Center";
+          }
+
+          return {
+            id: el.id,
+            name: name,
+            address: tags["addr:street"] || tags["addr:full"] || "Address not available",
+            phone: tags.phone || "",
+            lat: el.lat || el.center?.lat,
+            lng: el.lon || el.center?.lon,
+          };
+        });
 
         setCenters(formatted);
       } catch (err) {

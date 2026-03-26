@@ -4,21 +4,23 @@ import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Mail, Phone, MapPin, Briefcase, Award, GraduationCap, Settings, Database } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-500 transition-all font-medium text-slate-700" 
     />
   </div>
 );
 
-export default function ExecutiveAssistantEliteTemplate() {
+export default function ExecutiveAssistantEliteTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -44,85 +46,76 @@ export default function ExecutiveAssistantEliteTemplate() {
 
   const [zoom, setZoom] = useState(0.8);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [data, setData] = useState(templateConfig.defaultData);
+        const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`resume_${templateConfig.name}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 1000);
-  };
-
-  const runDownloadProcess = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Administrative and Support",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvNumber = res.data.cvNumber;
-
-      const worker = html2pdf()
-        .set({
-          margin: 0,
-          filename: `${cvNumber}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: {
-            scale: 3,
-            useCORS: true,
-            letterRendering: true,
-            scrollX: 0,
-            scrollY: -window.scrollY
-          },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-        })
-        .from(previewRef.current);
-
-      const pdfBlob = await worker.output("blob");
-
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      await worker.save();
-
-      setGeneratedCvNumber(cvNumber);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Resume Save Failed:", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  const downloadPDF = async () => {
-    setShowReplaceModal(true);
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
   };
 
-  return (
+return (
     <div className="min-h-screen w-full bg-slate-50 flex flex-col overflow-hidden font-sans text-slate-900">
       
       {/* ELITE TOOLBAR */}
@@ -136,7 +129,7 @@ export default function ExecutiveAssistantEliteTemplate() {
                 <span className="font-bold text-xs uppercase tracking-[0.3em] text-slate-400">{templateConfig.name}</span>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={saveResume} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
+                <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
                     {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />} Save
                 </button>
                 <button onClick={downloadPDF} disabled={isDownloading} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md hover:opacity-90 disabled:opacity-70" style={{ backgroundColor: templateConfig.accentColor }}>
@@ -154,18 +147,18 @@ export default function ExecutiveAssistantEliteTemplate() {
                 <div className="bg-white p-8 rounded border border-slate-200 shadow-sm">
                     <h3 className="text-[11px] font-black mb-6 flex items-center gap-2 text-slate-800 uppercase tracking-widest border-b pb-2"><Settings className="w-4 h-4" /> Personal Configuration</h3>
                     <div className="grid grid-cols-2 gap-5">
-                        <InputGroup label="Given Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Surname" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Designated Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Primary Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Secure Phone" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="HQ Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="Given Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Surname" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Designated Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Primary Email" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Secure Phone" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="HQ Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white p-8 rounded border border-slate-200 shadow-sm">
                     <h3 className="text-[11px] font-black mb-4 uppercase tracking-widest text-slate-800 border-b pb-2">Executive Summary</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full bg-slate-50 p-4 rounded text-sm font-medium focus:outline-slate-300 transition-all mt-2 border border-slate-100 shadow-inner"/>
+                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full bg-slate-50 p-4 rounded text-sm font-medium focus:outline-slate-300 transition-all mt-2 border border-slate-100 shadow-inner"/>
                 </div>
 
                 <div className="bg-white p-8 rounded border border-slate-200 shadow-sm">
@@ -177,10 +170,10 @@ export default function ExecutiveAssistantEliteTemplate() {
                         <div key={i} className="mb-6 p-6 rounded bg-slate-50 relative group border border-slate-100">
                             <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Position" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Dates of Support" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={4} placeholder="Detail support operations, travel coordination, and executive outcomes..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border rounded p-3 text-sm mt-1 outline-none focus:border-slate-400 bg-white shadow-inner"/>
+                                <InputGroup label="Position" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Dates of Support" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={4} placeholder="Detail support operations, travel coordination, and executive outcomes..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border rounded p-3 text-sm mt-1 outline-none focus:border-slate-400 bg-white shadow-inner"/>
                             </div>
                         </div>
                      ))}
@@ -188,9 +181,9 @@ export default function ExecutiveAssistantEliteTemplate() {
 
                 <div className="bg-white p-8 rounded border border-slate-200 shadow-sm">
                     <h3 className="text-[11px] font-black mb-4 uppercase tracking-widest text-slate-800 border-b pb-2">Competencies & Education</h3>
-                    <InputGroup label="Key Skills (Separated by commas)" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Key Skills (Separated by commas)" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-6"></div>
-                    <InputGroup label="Academic Background" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Academic Background" name="education" value={data.education} onChange={handleInputChange}/>
                 </div>
             </div>
 
@@ -281,71 +274,34 @@ export default function ExecutiveAssistantEliteTemplate() {
                     {/* Footer / Tracking */}
                     <div style={{ marginTop: 'auto', padding: '30px 70px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '9px', fontWeight: '800', color: '#cbd5e1', letterSpacing: '2px', textTransform: 'uppercase' }}>Elite Service Protocol // v.2026</span>
-                        {generatedCvNumber && (
-                            <span style={{ fontSize: '9px', fontWeight: '800', color: '#1e293b', letterSpacing: '3px' }}>REF_{generatedCvNumber}</span>
-                        )}
+                        
                     </div>
                 </div>
             </div>
         </div>
       </div>
 
-      {/* Replace Confirmation Modal */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Update Resume?
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              This resume will be replaced with the latest changes.
-            </p>
+      
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowReplaceModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
+      
 
-              <button
-                onClick={runDownloadProcess}
-                disabled={isDownloading}
-                className="px-4 py-2 rounded-lg text-white disabled:opacity-70"
-                style={{ backgroundColor: templateConfig.accentColor }}
-              >
-                {isDownloading ? "Generating..." : "Yes, Continue"}
-              </button>
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center">
-            <h3 className="text-lg font-bold text-green-700 mb-2">
-              Resume Saved Successfully
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              Your latest resume has been uploaded and downloaded.
-            </p>
-            <p className="text-sm font-semibold text-gray-900 mb-6">
-              CV Number: {generatedCvNumber}
-            </p>
-
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              className="px-5 py-2 rounded-lg text-white"
-              style={{ backgroundColor: templateConfig.accentColor }}
-            >
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
               OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

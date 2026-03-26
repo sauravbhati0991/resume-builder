@@ -4,21 +4,23 @@ import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { ArrowLeft, Download, Trash2, Loader2, BarChart3, PieChart, Database, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all font-medium" 
     />
   </div>
 );
 
-export default function FinancialAnalystModernTemplate() {
+export default function FinancialAnalystModernTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -44,87 +46,77 @@ export default function FinancialAnalystModernTemplate() {
 
   // MASTER PATTERN STATE
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [data, setData] = useState(templateConfig.defaultData);
+        const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
   // Quick Sync (Draft)
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`fin_analyst_sync_${templateId}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 800);
-  };
-
-  // MASTER DOWNLOAD FLOW
-  const runDownloadProcess = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      // 1. Unified Handshake
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Finance & Analytics",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvNumber = res.data.cvNumber;
-      setGeneratedCvNumber(cvNumber);
-
-      // 2. High-Scale Rendering (Scale 3 + UI Fixes)
-      const worker = html2pdf()
-        .set({
-          margin: 0,
-          filename: `FIN_REPORT_${cvNumber}.pdf`,
-          image: { type: 'jpeg', quality: 1 },
-          html2canvas: { 
-            scale: 3, 
-            useCORS: true, 
-            letterRendering: true,
-            scrollX: 0,
-            scrollY: -window.scrollY
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(previewRef.current);
-
-      // 3. FormData Archival (Binary Upload)
-      const pdfBlob = await worker.output("blob");
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      // 4. Client Trigger
-      await worker.save();
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Analyst Report Export Failure:", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => setShowReplaceModal(true);
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
+  };
 
-  return (
+return (
     <div className="min-h-screen w-full bg-[#f8fafc] flex flex-col overflow-hidden font-sans text-slate-900">
       
       {/* ANALYST TOOLBAR */}
@@ -140,7 +132,7 @@ export default function FinancialAnalystModernTemplate() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={saveResume} disabled={isSaving} className="text-xs font-bold h-9 px-4 rounded-lg bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition-all uppercase flex items-center">
+                <button onClick={handleSave} disabled={isSaving} className="text-xs font-bold h-9 px-4 rounded-lg bg-emerald-50 text-emerald-900 hover:bg-emerald-100 transition-all uppercase flex items-center">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Database className="w-4 h-4 mr-2" />} Sync_Data
                 </button>
                 <button onClick={downloadPDF} disabled={isDownloading} className="text-xs font-black h-9 px-6 rounded-lg bg-emerald-900 text-white hover:bg-emerald-950 transition-all uppercase tracking-widest flex items-center shadow-lg">
@@ -158,18 +150,18 @@ export default function FinancialAnalystModernTemplate() {
                 <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <h3 className="text-[11px] font-black mb-6 flex items-center gap-2 text-emerald-900 uppercase tracking-widest border-b pb-2"><FileSpreadsheet className="w-4 h-4" /> Personal Ledger</h3>
                     <div className="grid grid-cols-2 gap-5">
-                        <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Professional Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Contact Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Phone Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Current Hub" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Professional Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Contact Email" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Phone Line" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="Current Hub" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <h3 className="text-[11px] font-black mb-4 uppercase tracking-widest text-emerald-900 border-b pb-2">Executive Summary</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full bg-slate-50 p-4 rounded-xl text-sm font-medium focus:ring-1 focus:ring-emerald-700 focus:outline-none mt-2 border-none"/>
+                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full bg-slate-50 p-4 rounded-xl text-sm font-medium focus:ring-1 focus:ring-emerald-700 focus:outline-none mt-2 border-none"/>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -181,10 +173,10 @@ export default function FinancialAnalystModernTemplate() {
                         <div key={i} className="mb-6 p-5 rounded-xl bg-slate-50 relative group border border-slate-100">
                             <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Fiscal Period" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} placeholder="Focus on ROI, cost savings, and data tools..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border rounded-xl p-3 text-sm mt-1 outline-none focus:border-emerald-600 bg-white shadow-inner"/>
+                                <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Fiscal Period" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={3} placeholder="Focus on ROI, cost savings, and data tools..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border rounded-xl p-3 text-sm mt-1 outline-none focus:border-emerald-600 bg-white shadow-inner"/>
                             </div>
                         </div>
                      ))}
@@ -192,9 +184,9 @@ export default function FinancialAnalystModernTemplate() {
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <h3 className="text-[11px] font-black mb-4 uppercase tracking-widest text-emerald-900 border-b pb-2">Technical Tooling</h3>
-                    <InputGroup label="Skills (Separated by commas)" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Skills (Separated by commas)" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-6"></div>
-                    <InputGroup label="Academic Background" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Academic Background" name="education" value={data.education} onChange={handleInputChange}/>
                 </div>
             </div>
 
@@ -251,11 +243,7 @@ export default function FinancialAnalystModernTemplate() {
                                 <h3 style={{ fontSize: '11px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>Credentials</h3>
                                 <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-line', fontWeight: '700' }}>{data.education}</p>
                             </section>
-                            {generatedCvNumber && (
-                                <div style={{ marginTop: 'auto', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
-                                    <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '1px', opacity: 0.5 }}>ID_{generatedCvNumber}</span>
-                                </div>
-                            )}
+                            
                         </div>
                     </div>
                     <div style={{ marginTop: 'auto', padding: '30px 60px', backgroundColor: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
@@ -271,36 +259,28 @@ export default function FinancialAnalystModernTemplate() {
       </div>
 
       {/* CONFIRMATION MODAL */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border border-slate-200">
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Generate Analysis Report?</h3>
-            <p className="text-sm text-slate-500 mb-6 font-medium leading-relaxed">Proceeding will sync your portfolio with the data lake and generate a certified PDF manifest.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowReplaceModal(false)} className="px-5 py-2 rounded text-slate-400 hover:bg-slate-50 font-bold transition-all uppercase text-[10px] tracking-widest">Abort</button>
-              <button onClick={runDownloadProcess} disabled={isDownloading} className="px-6 py-2 rounded-lg bg-emerald-900 text-white font-bold uppercase shadow-lg transition-all active:scale-95 text-[10px] tracking-widest">
-                {isDownloading ? "Processing..." : "Confirm & Export"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* SUCCESS MODAL */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl p-10 max-w-sm w-full text-center shadow-2xl border-t-[8px] border-emerald-600">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <CheckCircle2 size={32}/>
+      
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Export Certified</h3>
-            <div className="bg-slate-50 py-3 rounded-xl font-mono font-bold text-emerald-700 mb-8 tracking-widest text-lg border border-slate-200">{generatedCvNumber}</div>
-            <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 rounded-xl bg-slate-900 text-white font-bold uppercase shadow-xl hover:opacity-90 transition-all text-xs tracking-widest">
-              Return to Profile
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+              OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -7,21 +7,23 @@ import {
   Mail, Phone, MapPin, BookOpen, Award, ShieldCheck, Library
 } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-bold text-indigo-900/40 mb-1 block uppercase tracking-widest">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-bold text-indigo-900/40 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full rounded border-b border-gray-200 bg-transparent px-0 py-1.5 text-sm focus:outline-none focus:border-[#312e81] transition-all font-serif" 
     />
   </div>
 );
 
-export default function PhDCandidateModernTemplate() {
+export default function PhDCandidateModernTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -46,77 +48,78 @@ export default function PhDCandidateModernTemplate() {
   };
 
   // Logic State
-  const [data, setData] = useState(templateConfig.defaultData);
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [zoom, setZoom] = useState(0.75);
+        const [zoom, setZoom] = useState(0.75);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  const saveProgress = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`phd_draft_${data.lastName}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 800);
-  };
-
-  const runBuildProcess = async () => {
     try {
-      setIsDownloading(true);
-      // 1. Database Archiving
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Academic",
-        resumeData: data
-      });
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      const cvNumber = res.data.cvNumber;
-      setGeneratedCvNumber(cvNumber);
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      // 2. PDF Rendering
-      const opt = { 
-        margin: 0, 
-        filename: `CV_${data.lastName}_${cvNumber}.pdf`, 
-        image: { type: 'jpeg', quality: 0.98 }, 
-        html2canvas: { scale: 3, useCORS: true }, 
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-      };
-
-      const worker = html2pdf().set(opt).from(previewRef.current);
-      const pdfBlob = await worker.output("blob");
-      
-      // 3. Asset Upload
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      await worker.save();
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Institutional Archiving Error:", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  return (
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
+  };
+
+return (
     <div className="min-h-screen w-full bg-[#f8fafc] flex flex-col overflow-hidden font-serif">
       
       {/* NAVIGATION TOOLBAR */}
@@ -130,10 +133,10 @@ export default function PhDCandidateModernTemplate() {
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <button onClick={saveProgress} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 border border-slate-200 rounded flex items-center gap-2 transition-all">
+                <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 border border-slate-200 rounded flex items-center gap-2 transition-all">
                     {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} />} Draft
                 </button>
-                <button onClick={() => setShowReplaceModal(true)} disabled={isDownloading} className="px-6 py-2 text-sm font-bold text-white bg-[#312e81] rounded shadow-md hover:bg-[#252361] transition-all flex items-center gap-2">
+                <button onClick={downloadPDF} disabled={isDownloading} className="px-6 py-2 text-sm font-bold text-white bg-[#312e81] rounded shadow-md hover:bg-[#252361] transition-all flex items-center gap-2">
                     {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Finalize CV
                 </button>
             </div>
@@ -149,18 +152,18 @@ export default function PhDCandidateModernTemplate() {
                         <BookOpen size={14}/> Biographical Data
                     </h3>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                        <InputGroup label="Given Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Surname" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Candidacy Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Institutional Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Contact Number" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Current Base" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="Given Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Surname" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Candidacy Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Institutional Email" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Contact Number" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="Current Base" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </section>
 
                 <section>
                     <h3 className="text-xs font-black text-indigo-900 uppercase tracking-[0.3em] mb-4">Research Interests & Summary</h3>
-                    <textarea rows={5} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-gray-100 rounded-lg p-4 text-sm focus:ring-1 focus:ring-[#312e81] outline-none bg-slate-50/50 leading-relaxed italic text-slate-600"/>
+                    <textarea rows={5} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border border-gray-100 rounded-lg p-4 text-sm focus:ring-1 focus:ring-[#312e81] outline-none bg-slate-50/50 leading-relaxed italic text-slate-600"/>
                 </section>
 
                 <section>
@@ -172,10 +175,10 @@ export default function PhDCandidateModernTemplate() {
                         <div key={i} className="mb-8 p-6 border-l-2 border-indigo-100 bg-white relative group">
                             <button onClick={()=>removeExperience(i)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Institution" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Period" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border-b border-gray-100 p-2 text-sm focus:outline-none focus:border-[#312e81]"/>
+                                <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Institution" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Period" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={3} value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border-b border-gray-100 p-2 text-sm focus:outline-none focus:border-[#312e81]"/>
                             </div>
                         </div>
                      ))}
@@ -183,9 +186,9 @@ export default function PhDCandidateModernTemplate() {
 
                 <section>
                     <h3 className="text-xs font-black text-indigo-900 uppercase tracking-[0.3em] mb-4">Methodologies & Education</h3>
-                    <InputGroup label="Core Competencies" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Core Competencies" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-6"></div>
-                    <InputGroup label="Academic History" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Academic History" name="education" value={data.education} onChange={handleInputChange}/>
                 </section>
             </div>
         </div>
@@ -263,50 +266,34 @@ export default function PhDCandidateModernTemplate() {
                 </div>
 
                 {/* Academic Verification Bar */}
-                {generatedCvNumber && (
-                    <div style={{ position: 'absolute', bottom: '40px', left: '0', width: '100%', padding: '0 50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.4 }}>
-                        <div style={{ height: '1px', flex: 1, backgroundColor: '#e2e8f0' }}></div>
-                        <div style={{ fontSize: '9px', padding: '0 15px', color: '#64748b', fontFamily: 'monospace' }}>CV-ID: {generatedCvNumber} // ACADEMIC_RECORD_LOCKED</div>
-                        <div style={{ height: '1px', flex: 1, backgroundColor: '#e2e8f0' }}></div>
-                    </div>
-                )}
+                
             </div>
         </div>
       </div>
 
       {/* CONFIRMATION MODAL */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded bg-white p-8 shadow-2xl border-t-4 border-[#312e81]">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Finalize Academic CV?</h3>
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed">This will archive your research profile and generate a permanent institutional reference ID for academic applications.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowReplaceModal(false)} className="px-5 py-2 text-slate-400 font-bold text-xs uppercase hover:bg-slate-50 transition-colors">Discard</button>
-              <button onClick={runBuildProcess} disabled={isDownloading} className="px-6 py-2 bg-[#312e81] text-white font-bold shadow hover:bg-[#252361] text-xs uppercase tracking-widest transition-transform active:scale-95">
-                {isDownloading ? "Archiving..." : "Commit Changes"}
-              </button>
+      
+
+      {/* SUCCESS MODAL */}
+      
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+              OK
+            </button>
           </div>
         </div>
       )}
 
-      {/* SUCCESS MODAL */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md px-4">
-          <div className="w-full max-w-md rounded bg-white p-10 shadow-2xl text-center border-b-8 border-[#312e81]">
-            <div className="w-20 h-20 bg-indigo-50 text-[#312e81] rounded-full flex items-center justify-center mx-auto mb-6">
-              <Award size={48}/>
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">PROFILE ARCHIVED</h3>
-            <p className="text-sm text-slate-500 mb-8 font-medium">Institutional reference number generated for your CV.</p>
-            <div className="bg-slate-50 border border-slate-100 p-6 rounded-lg mb-8">
-               <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">Ref Number</p>
-               <p className="text-3xl font-bold text-[#312e81] font-mono tracking-tighter">{generatedCvNumber}</p>
-            </div>
-            <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 bg-[#312e81] text-white font-bold uppercase tracking-widest shadow-xl hover:bg-[#1e1c50] transition-all">Return to Library</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

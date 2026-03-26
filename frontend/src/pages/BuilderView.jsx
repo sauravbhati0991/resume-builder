@@ -180,11 +180,15 @@ export default function BuilderView() {
   /**
    * RENDER BUILDER
    */
+  // Read resume data from navigation state (Edit mode)
+  const initialData = location.state?.resumeData || null;
+
   return (
     <SelectedComponent
       templateId={templateId}
       saveResume={saveResume}
       downloadResume={downloadResume}
+      initialData={initialData}
     />
   );
 

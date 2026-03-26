@@ -58,6 +58,7 @@ import ResumeViewer from "./pages/ResumeViewer";
 
 /* Protected */
 import UserProtectedRoute from "./routes/UserProtectedRoute";
+import PaymentPage from "./pages/PaymentPage";
 
 /* =======================
    LAYOUTS
@@ -103,6 +104,7 @@ export default function App() {
           <Route path="/templates" element={<PublicTemplatesPage />} />
 
           <Route path="/pricing" element={<PricingPlans />} />
+          <Route path="/payment" element={<PaymentPage />} />
 
           <Route path="/login" element={<Login />} />
 
@@ -160,6 +162,7 @@ export default function App() {
           <Route path="/stu/resume/:cvNumber" element={<ResumeViewer />} />
 
           <Route path="/stu/pricing" element={<StudentPricing />} />
+          <Route path="/stu/payment" element={<PaymentPage />} />
 
           <Route path="/stu/contact" element={<StudentContact />} />
 
@@ -199,6 +202,7 @@ export default function App() {
           <Route path="/pro/resume/:cvNumber" element={<ResumeViewer />} />
 
           <Route path="/pro/pricing" element={<ProPricing />} />
+          <Route path="/pro/payment" element={<PaymentPage />} />
 
           <Route path="/pro/about" element={<AboutResumeAPro />} />
 

@@ -4,21 +4,23 @@ import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Palette, Eye, Type, Camera } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full border-b-2 border-slate-200 bg-transparent py-2 text-sm focus:outline-none focus:border-purple-600 transition-all font-medium" 
     />
   </div>
 );
 
-export default function ArtDirectorProTemplate() {
+export default function ArtDirectorProTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -44,85 +46,76 @@ export default function ArtDirectorProTemplate() {
 
   const [zoom, setZoom] = useState(0.8);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [data, setData] = useState(templateConfig.defaultData);
+        const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`resume_${templateConfig.name}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 1000);
-  };
-
-  const runDownloadProcess = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Creative and Media",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvNumber = res.data.cvNumber;
-
-      const worker = html2pdf()
-        .set({
-          margin: 0,
-          filename: `${cvNumber}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: {
-            scale: 3,
-            useCORS: true,
-            letterRendering: true,
-            scrollX: 0,
-            scrollY: -window.scrollY
-          },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-        })
-        .from(previewRef.current);
-
-      const pdfBlob = await worker.output("blob");
-
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      await worker.save();
-
-      setGeneratedCvNumber(cvNumber);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Resume Save Failed:", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  const downloadPDF = async () => {
-    setShowReplaceModal(true);
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
   };
 
-  return (
+return (
     <div className="min-h-screen w-full bg-[#f3f3f3] flex flex-col overflow-hidden font-sans text-slate-900">
       
       {/* STUDIO TOOLBAR */}
@@ -138,7 +131,7 @@ export default function ArtDirectorProTemplate() {
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <button onClick={saveResume} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
+                <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
                     {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />} Save
                 </button>
                 <button onClick={downloadPDF} disabled={isDownloading} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md hover:opacity-90 disabled:opacity-70" style={{ backgroundColor: templateConfig.accentColor }}>
@@ -156,18 +149,18 @@ export default function ArtDirectorProTemplate() {
                 <div className="bg-white p-8 border-2 border-black">
                     <h3 className="text-xs font-black mb-6 flex items-center gap-2 text-black uppercase tracking-[0.2em] border-b-2 border-black pb-2"><Eye className="w-4 h-4" /> Visual Identity</h3>
                     <div className="grid grid-cols-2 gap-6">
-                        <InputGroup label="First_Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last_Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Creative_Role" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Contact" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Base_Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="First_Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Last_Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Creative_Role" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Email" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Contact" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="Base_Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white p-8 border-2 border-black">
                     <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Director's Statement</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full bg-slate-50 p-4 text-sm font-medium focus:ring-0 focus:outline-none border-b-4 border-purple-200 mt-2"/>
+                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full bg-slate-50 p-4 text-sm font-medium focus:ring-0 focus:outline-none border-b-4 border-purple-200 mt-2"/>
                 </div>
 
                 <div className="bg-white p-8 border-2 border-black">
@@ -179,10 +172,10 @@ export default function ArtDirectorProTemplate() {
                         <div key={i} className="mb-6 p-6 bg-slate-50 border-l-8 border-purple-600 relative group">
                             <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Studio/Agency" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Timeline" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} placeholder="Describe the creative vision, team management, and KPIs..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border-none bg-white p-3 text-sm font-medium mt-2"/>
+                                <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Studio/Agency" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Timeline" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={3} placeholder="Describe the creative vision, team management, and KPIs..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border-none bg-white p-3 text-sm font-medium mt-2"/>
                             </div>
                         </div>
                      ))}
@@ -190,9 +183,9 @@ export default function ArtDirectorProTemplate() {
 
                 <div className="bg-white p-8 border-2 border-black">
                     <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Creative Toolbox</h3>
-                    <InputGroup label="Skills & Software" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Skills & Software" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-8"></div>
-                    <InputGroup label="Education & Credentials" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Education & Credentials" name="education" value={data.education} onChange={handleInputChange}/>
                 </div>
             </div>
 
@@ -278,74 +271,34 @@ export default function ArtDirectorProTemplate() {
                         </div>
 
                         {/* Footer / Serial */}
-                        {generatedCvNumber && (
-                            <div style={{ padding: '15px 40px', borderTop: '2px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '9px', fontWeight: '900', color: '#ccc', textTransform: 'uppercase', letterSpacing: '2px' }}>Director's Cut // Ver. 2.0</span>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: '#333', fontFamily: 'monospace' }}>#{generatedCvNumber}</span>
-                            </div>
-                        )}
+                        
                     </div>
                 </div>
             </div>
         </div>
       </div>
 
-      {/* Replace Confirmation Modal */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Update Resume?
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              This resume will be replaced with the latest changes.
-            </p>
+      
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowReplaceModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
+      
 
-              <button
-                onClick={runDownloadProcess}
-                disabled={isDownloading}
-                className="px-4 py-2 rounded-lg text-white disabled:opacity-70"
-                style={{ backgroundColor: templateConfig.accentColor }}
-              >
-                {isDownloading ? "Generating..." : "Yes, Continue"}
-              </button>
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center">
-            <h3 className="text-lg font-bold text-green-700 mb-2">
-              Resume Saved Successfully
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              Your latest resume has been uploaded and downloaded.
-            </p>
-            <p className="text-sm font-semibold text-gray-900 mb-6">
-              CV Number: {generatedCvNumber}
-            </p>
-
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              className="px-5 py-2 rounded-lg text-white"
-              style={{ backgroundColor: templateConfig.accentColor }}
-            >
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
               OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

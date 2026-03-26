@@ -8,21 +8,23 @@ import {
   Database, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#00008B] transition-all shadow-sm font-medium text-slate-700" 
     />
   </div>
 );
 
-export default function ContractNegotiatorProTemplate() {
+export default function ContractNegotiatorProTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -47,85 +49,78 @@ export default function ContractNegotiatorProTemplate() {
   };
 
   // MASTER PATTERN STATE
-  const [data, setData] = useState(templateConfig.defaultData);
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+      
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
   // STORAGE SYNC HANDSHAKE
-  const syncContractState = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`contract_pro_sync_${templateId}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 800);
-  };
-
-  // MASTER FLOW: Confirm -> Sync -> Archive -> Download
-  const executeFinalDeployment = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      // 1. Unified API Handshake (POST JSON)
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Legal",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvId = res.data.cvNumber;
-      setGeneratedCvNumber(cvId);
-
-      // 2. High-Scale Rendering (Scale 3 + Scroll Correction)
-      const opt = { 
-        margin: 0, 
-        filename: `CONTRACT_ARCHIVE_${cvId}.pdf`, 
-        image: { type: 'jpeg', quality: 1.0 }, 
-        html2canvas: { 
-          scale: 3, 
-          useCORS: true,
-          scrollX: 0,
-          scrollY: -window.scrollY
-        }, 
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-      };
-
-      const worker = html2pdf().set(opt).from(previewRef.current);
-      const pdfBlob = await worker.output("blob");
-
-      // 3. Binary Handshake (POST Blob via FormData)
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvId}.pdf`);
-      formData.append("cvNumber", cvId);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      // 4. Client-Side Save
-      await worker.save();
-      setShowSuccessModal(true);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
     } catch (error) {
-      console.error("Contract deployment failed:", error);
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  return (
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
+  };
+
+return (
     <div className="fixed inset-0 bg-slate-50 flex flex-col overflow-hidden font-sans text-slate-800 z-[60]">
       {/* PROFESSIONAL HEADER */}
       <div className="w-full bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-20 shadow-sm">
@@ -146,7 +141,7 @@ export default function ContractNegotiatorProTemplate() {
             {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />} 
             Local Sync
           </button>
-          <button onClick={() => setShowReplaceModal(true)} disabled={isDownloading} className="flex items-center gap-2 bg-[#00008B] text-white px-6 py-2 rounded-md font-bold text-[10px] uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">
+          <button onClick={downloadPDF} disabled={isDownloading} className="flex items-center gap-2 bg-[#00008B] text-white px-6 py-2 rounded-md font-bold text-[10px] uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">
             {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} 
             Execute Archive
           </button>
@@ -161,18 +156,18 @@ export default function ContractNegotiatorProTemplate() {
                    <Briefcase size={16} className="text-blue-900"/> Professional Profile
                 </h3>
                 <div className="grid grid-cols-2 gap-5">
-                    <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                    <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                    <InputGroup label="Professional Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                    <InputGroup label="Business Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                    <InputGroup label="Contact Number" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                    <InputGroup label="Office Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                    <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                    <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                    <InputGroup label="Professional Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                    <InputGroup label="Business Email" name="email" value={data.email} onChange={handleInputChange}/>
+                    <InputGroup label="Contact Number" name="phone" value={data.phone} onChange={handleInputChange}/>
+                    <InputGroup label="Office Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                 </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Executive Summary</h3>
-                <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-md p-3 text-sm focus:ring-1 focus:ring-[#00008B] outline-none text-slate-600 bg-slate-50/30 font-serif italic shadow-inner"/>
+                <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border border-slate-200 rounded-md p-3 text-sm focus:ring-1 focus:ring-[#00008B] outline-none text-slate-600 bg-slate-50/30 font-serif italic shadow-inner"/>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
@@ -184,10 +179,10 @@ export default function ContractNegotiatorProTemplate() {
                     <div key={i} className="mb-6 p-5 border border-slate-100 rounded bg-slate-50/50 relative group transition-all hover:shadow-md">
                         <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
                         <div className="grid grid-cols-2 gap-4">
-                            <InputGroup label="Position" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                            <InputGroup label="Firm/Corp" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                            <InputGroup label="Term" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                            <textarea rows={3} placeholder="Key deal terms, negotiation wins, or contract types..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-200 rounded p-3 text-sm text-slate-600 focus:ring-1 focus:ring-blue-100 outline-none"/>
+                            <InputGroup label="Position" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                            <InputGroup label="Firm/Corp" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                            <InputGroup label="Term" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                            <textarea rows={3} placeholder="Key deal terms, negotiation wins, or contract types..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border border-slate-200 rounded p-3 text-sm text-slate-600 focus:ring-1 focus:ring-blue-100 outline-none"/>
                         </div>
                     </div>
                  ))}
@@ -249,50 +244,34 @@ export default function ContractNegotiatorProTemplate() {
                 </div>
 
                 {/* AUTHENTICITY FOOTER */}
-                {generatedCvNumber && (
-                  <div style={{ position: 'absolute', bottom: '20px', right: '40px', fontSize: '9px', color: '#aaa', fontFamily: 'monospace', textAlign: 'right' }}>
-                    AUDIT_REF: {generatedCvNumber}<br/>
-                    <span style={{ fontSize: '8px' }}>Certified Transactional Record</span>
-                  </div>
-                )}
+                
             </div>
         </div>
       </div>
 
       {/* MASTER CONFIRMATION MODAL */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl border-t-8 border-[#00008B]">
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight flex items-center gap-2">
-              <ShieldAlert className="text-blue-900"/> Verify Archival
-            </h3>
-            <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">Archiving will finalize your transactional record and sync these credentials with the server for professional verification.</p>
-            <div className="flex flex-col gap-3">
-              <button onClick={executeFinalDeployment} disabled={isDownloading} className="w-full py-4 rounded-md bg-[#00008B] text-white font-bold uppercase tracking-widest transition-all active:scale-95 text-xs shadow-lg">
-                {isDownloading ? "Executing..." : "Confirm & Export"}
-              </button>
-              <button onClick={() => setShowReplaceModal(false)} className="w-full py-3 rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 font-bold transition-all uppercase text-xs tracking-widest">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* MASTER SUCCESS MODAL */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
-          <div className="bg-white rounded-2xl p-10 max-w-sm w-full text-center shadow-2xl">
-            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={40}/>
+      
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">Archive Finalized</h3>
-            <p className="text-slate-500 text-sm mb-8 px-4">Your professional record has been synchronized and the transaction ID generated.</p>
-            <div className="bg-slate-50 py-4 rounded-md font-mono font-bold text-blue-900 mb-8 tracking-widest text-lg border border-slate-100 shadow-sm mx-4">{generatedCvNumber}</div>
-            <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 bg-[#00008B] text-white font-bold rounded-md shadow-lg transition-all uppercase text-xs tracking-widest">
-              Close Terminal
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+              OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

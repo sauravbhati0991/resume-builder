@@ -4,21 +4,23 @@ import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Mail, Phone, MapPin, Box, Award, ShieldCheck, Database, CheckCircle2 } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-black text-slate-500 mb-1 block uppercase tracking-[0.1em]">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-black text-slate-500 mb-1 block uppercase tracking-[0.1em]">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full rounded-none border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-slate-900 transition-all font-sans" 
     />
   </div>
 );
 
-export default function StructuralEngineerEliteTemplate() {
+export default function StructuralEngineerEliteTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -44,87 +46,77 @@ export default function StructuralEngineerEliteTemplate() {
 
   // MASTER PATTERN STATE
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [data, setData] = useState(templateConfig.defaultData);
+        const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
   // Local Sync (Quick Save)
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`struc_elite_sync_${templateId}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 800);
-  };
-
-  // MASTER LOGIC: Confirm -> Sync -> Archive -> Download
-  const runDownloadProcess = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      // 1. Handshake with Unified API for Serial ID
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Structural Engineering",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvNumber = res.data.cvNumber;
-
-      // 2. High-Scale Rendering (Scale 3 + Scroll Fix)
-      const worker = html2pdf()
-        .set({
-          margin: 0,
-          filename: `STRUC_ELITE_${cvNumber}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { 
-            scale: 3, 
-            useCORS: true, 
-            letterRendering: true,
-            scrollX: 0,
-            scrollY: -window.scrollY 
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(previewRef.current);
-
-      // 3. Server-Side Archive (Blob via FormData)
-      const pdfBlob = await worker.output("blob");
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      // 4. Client-Side Save & Finalize
-      await worker.save();
-      setGeneratedCvNumber(cvNumber);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Infrastructure process fault:", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  const downloadPDF = () => setShowReplaceModal(true);
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
+  };
 
-  return (
+return (
     <div className="min-h-screen w-full bg-slate-200 flex flex-col overflow-hidden font-sans text-slate-900">
       
       {/* TOOLBAR */}
@@ -139,7 +131,7 @@ export default function StructuralEngineerEliteTemplate() {
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={saveResume} disabled={isSaving} className="inline-flex items-center text-xs font-black h-8 px-4 rounded bg-slate-700 hover:bg-slate-600 border border-slate-500 transition-all uppercase">
+                <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center text-xs font-black h-8 px-4 rounded bg-slate-700 hover:bg-slate-600 border border-slate-500 transition-all uppercase">
                     {isSaving ? <Loader2 className="w-3 h-3 mr-2 animate-spin"/> : <Database className="w-3 h-3 mr-2" />} Sync_Cloud
                 </button>
                 <button onClick={downloadPDF} disabled={isDownloading} className="inline-flex items-center text-xs font-black h-8 px-4 rounded text-white shadow-lg hover:brightness-110 transition-all uppercase" style={{ backgroundColor: templateConfig.accentColor }}>
@@ -157,18 +149,18 @@ export default function StructuralEngineerEliteTemplate() {
                 <div className="bg-white rounded shadow-sm p-6 border-t-4 border-slate-800">
                     <h3 className="text-xs font-black mb-6 flex items-center gap-2 text-slate-800 uppercase tracking-widest border-b pb-2"><ShieldCheck className="w-4 h-4" /> Personnel_Specs</h3>
                     <div className="grid grid-cols-2 gap-6">
-                        <InputGroup label="First_Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last_Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Professional_Designation" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Email_Address" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Contact_Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Home_Station" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="First_Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Last_Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Professional_Designation" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Email_Address" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Contact_Line" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="Home_Station" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white rounded shadow-sm p-6 border-t-4 border-slate-800">
                     <h3 className="text-xs font-black mb-4 uppercase tracking-widest text-slate-800">Executive_Summary</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-none p-3 text-sm focus:border-orange-700 outline-none leading-relaxed bg-slate-50 font-sans"/>
+                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border border-slate-200 rounded-none p-3 text-sm focus:border-orange-700 outline-none leading-relaxed bg-slate-50 font-sans"/>
                 </div>
 
                 <div className="bg-white rounded shadow-sm p-6 border-t-4 border-slate-800">
@@ -177,10 +169,10 @@ export default function StructuralEngineerEliteTemplate() {
                         <div key={i} className="mb-4 p-4 border border-slate-100 bg-slate-50 relative group">
                             <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button>
                             <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role_ID" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Firm_Name" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Timeline" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} placeholder="Describe finite element analysis, material optimization, and project values..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-200 rounded-none p-2 text-sm focus:border-orange-700 outline-none"/>
+                                <InputGroup label="Role_ID" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Firm_Name" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Timeline" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={3} placeholder="Describe finite element analysis, material optimization, and project values..." value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border border-slate-200 rounded-none p-2 text-sm focus:border-orange-700 outline-none"/>
                             </div>
                         </div>
                      ))}
@@ -188,9 +180,9 @@ export default function StructuralEngineerEliteTemplate() {
 
                 <div className="bg-white rounded shadow-sm p-6 border-t-4 border-slate-800">
                     <h3 className="text-xs font-black mb-4 uppercase tracking-widest text-slate-800">Technical_Stack</h3>
-                    <InputGroup label="Core_Competencies" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Core_Competencies" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-6"></div>
-                    <InputGroup label="Academic_Credentials" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Academic_Credentials" name="education" value={data.education} onChange={handleInputChange}/>
                 </div>
             </div>
 
@@ -258,12 +250,7 @@ export default function StructuralEngineerEliteTemplate() {
                             </section>
 
                             {/* CV ID Server-Sync Verification */}
-                            {generatedCvNumber && (
-                                <div style={{ marginTop: '60px', padding: '15px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                                    <div style={{ fontSize: '9px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '5px' }}>Struc_ID_Verify:</div>
-                                    <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold', color: templateConfig.primaryColor }}>{generatedCvNumber}</div>
-                                </div>
-                            )}
+                            
                         </div>
                     </div>
                 </div>
@@ -272,37 +259,28 @@ export default function StructuralEngineerEliteTemplate() {
       </div>
 
       {/* CONFIRMATION MODAL */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-none bg-white p-6 shadow-2xl border-t-8 border-slate-900">
-            <h3 className="text-lg font-black text-slate-900 mb-2 uppercase tracking-tight">Approve PDF Export?</h3>
-            <p className="text-sm text-slate-600 mb-6 font-medium leading-relaxed italic">The system will finalize structural calculations and sync the blueprint with the server to generate a verified serial ID.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowReplaceModal(false)} className="px-4 py-2 rounded-none border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold transition-all uppercase text-[10px]">Cancel</button>
-              <button onClick={runDownloadProcess} disabled={isDownloading} className="px-6 py-2 rounded-none text-white font-black uppercase shadow-md transition-all active:scale-95 text-[10px]" style={{ backgroundColor: templateConfig.accentColor }}>
-                {isDownloading ? "Archiving..." : "Sync & Export"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* SUCCESS MODAL */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-none p-8 max-w-sm w-full text-center shadow-2xl border-b-8 border-orange-700">
-            <div className="w-16 h-16 bg-orange-50 text-orange-700 rounded-none flex items-center justify-center mx-auto mb-4 border-2 border-orange-700">
-              <CheckCircle2 size={32}/>
+      
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tighter">Blueprint Archived</h3>
-            <p className="text-sm text-slate-500 mb-6 font-medium">Verified ID Issued:</p>
-            <div className="bg-slate-100 py-3 rounded-none font-mono font-bold text-slate-900 mb-6 tracking-widest text-lg border border-dashed border-slate-400">{generatedCvNumber}</div>
-            <button onClick={() => setShowSuccessModal(false)} className="w-full py-3 rounded-none text-white font-black uppercase shadow-lg hover:opacity-90 transition-all text-xs tracking-widest" style={{ backgroundColor: templateConfig.primaryColor }}>
-              Return to Project
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+              OK
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

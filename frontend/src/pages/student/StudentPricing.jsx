@@ -9,8 +9,12 @@ export default function StudentPricing() {
     navigate("/stu/verification");
   };
 
+  const goStudentPayment = () => {
+    navigate("/stu/payment", { state: { amount: 10, planName: "Student" } });
+  };
+
   const goProfessionalPayment = () => {
-    navigate("/pricing/pro");
+    navigate("/stu/payment", { state: { amount: 99, planName: "Professional" } });
   };
 
   return (
@@ -55,9 +59,22 @@ export default function StudentPricing() {
 
           <button
             onClick={goStudentVerification}
-            className="mt-8 w-full rounded-full bg-black py-3.5 text-[15px] font-bold text-white shadow-md transition hover:bg-gray-900"
+            className="mt-8 w-full rounded-full bg-black py-3.5 text-[15px] font-bold text-white shadow-md transition hover:bg-gray-900 border-2 border-transparent"
           >
             Verify & Get Student Access
+          </button>
+
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="h-[1px] bg-gray-200 flex-1"></div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OR</span>
+            <div className="h-[1px] bg-gray-200 flex-1"></div>
+          </div>
+
+          <button
+            onClick={goStudentPayment}
+            className="mt-4 w-full rounded-full bg-white border-2 border-black py-3 text-[15px] font-bold text-black shadow-sm transition hover:bg-gray-50"
+          >
+            Pay ₹10 & Skip Verification
           </button>
 
           <p className="mt-3 text-[12px] text-gray-400">

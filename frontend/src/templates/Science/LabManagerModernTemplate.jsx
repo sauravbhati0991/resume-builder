@@ -4,16 +4,19 @@ import html2pdf from "html2pdf.js";
 import api from "../../utils/api";
 import { ArrowLeft, Save, Download, Trash2, Loader2, Microscope, Beaker, ShieldCheck } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008080]" />
+    <label htmlFor={name} className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
+    <input type="text" id={name}
+      name={name}
+      value={value} 
+      onChange={onChange} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008080]" />
   </div>
 );
 
-export default function LabManagerModernTemplate() {
+export default function LabManagerModernTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -38,75 +41,76 @@ export default function LabManagerModernTemplate() {
   };
 
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showReplaceModal, setShowReplaceModal] = useState(false);
-  const [generatedCvNumber, setGeneratedCvNumber] = useState("");
-  const [data, setData] = useState(templateConfig.defaultData);
+        const [data, setData] = useState(initialData || templateConfig.defaultData);
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { const newArray = [...data[arrayName]]; newArray[index][field] = value; setData(prev => ({ ...prev, [arrayName]: newArray })); };
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
+  };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
 
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`resume_${templateConfig.name}`, JSON.stringify(data));
-      setIsSaving(false);
-    }, 1000);
-  };
-
-  const runDownloadProcess = async () => {
     try {
-      setIsDownloading(true);
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
 
-      const res = await api.post("/resumes", {
-        templateId,
-        templateName: templateConfig.name,
-        categoryName: "Science",
-        resumeData: data
-      });
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
 
-      const cvNumber = res.data.cvNumber;
-
-      const worker = html2pdf()
-        .set({
-          margin: 0,
-          filename: `Lab_Manager_${data.lastName}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { 
-            scale: 3, 
-            useCORS: true, 
-            letterRendering: true,
-            scrollX: 0,
-            scrollY: -window.scrollY 
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(previewRef.current);
-
-      const pdfBlob = await worker.output("blob");
-      const formData = new FormData();
-      formData.append("file", pdfBlob, `${cvNumber}.pdf`);
-      formData.append("cvNumber", cvNumber);
-
-      await api.post("/resume-upload/resume-pdf", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      await worker.save();
-      setGeneratedCvNumber(cvNumber);
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Critical: Archive Sync failed", err);
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
     } finally {
-      setIsDownloading(false);
-      setShowReplaceModal(false);
+      setIsSaving(false);
     }
   };
 
-  return (
+  const downloadPDF = () => {
+    const element = previewRef.current;
+    const opt = {
+      margin: 0,
+      filename: `${data.firstName}_Resume.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
+  };
+
+return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
       {/* HEADER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
@@ -117,10 +121,10 @@ export default function LabManagerModernTemplate() {
                 <span className="font-bold text-[#008080] tracking-tight">{templateConfig.name}</span>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={saveResume} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
+                <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm">
                   {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />} Save Draft
                 </button>
-                <button onClick={() => setShowReplaceModal(true)} disabled={isDownloading} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md hover:opacity-90 transition-all" style={{ backgroundColor: templateConfig.primaryColor }}>
+                <button onClick={downloadPDF} disabled={isDownloading} className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md hover:opacity-90 transition-all" style={{ backgroundColor: templateConfig.primaryColor }}>
                    {isDownloading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Finalizing...</> : <><Download className="w-4 h-4 mr-2" /> Generate PDF</>}
                 </button>
             </div>
@@ -134,18 +138,18 @@ export default function LabManagerModernTemplate() {
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Beaker size={20} className="text-[#008080]"/> Lab Personnel Info</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Managerial Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Phone" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                        <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                        <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                        <InputGroup label="Managerial Title" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                        <InputGroup label="Email" name="email" value={data.email} onChange={handleInputChange}/>
+                        <InputGroup label="Phone" name="phone" value={data.phone} onChange={handleInputChange}/>
+                        <InputGroup label="Location" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                     <h3 className="text-lg font-bold mb-4">Executive Abstract</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border rounded-md p-3 text-sm outline-none focus:ring-2 focus:ring-[#008080] bg-gray-50/50"/>
+                    <textarea rows={4} value={data.summary} id="summary" name="summary" onChange={handleInputChange} className="w-full border rounded-md p-3 text-sm outline-none focus:ring-2 focus:ring-[#008080] bg-gray-50/50"/>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
@@ -157,10 +161,10 @@ export default function LabManagerModernTemplate() {
                         <div key={i} className="mb-4 p-4 border rounded-lg bg-gray-50/30 relative group border-dashed border-gray-300">
                             <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
                             <div className="grid grid-cols-2 gap-3">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Dates" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border rounded p-2 text-sm outline-none focus:ring-2 focus:ring-[#008080]"/>
+                                <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                                <InputGroup label="Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                                <textarea rows={3} value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 border rounded p-2 text-sm outline-none focus:ring-2 focus:ring-[#008080]"/>
                             </div>
                         </div>
                      ))}
@@ -168,9 +172,9 @@ export default function LabManagerModernTemplate() {
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><ShieldCheck size={20} className="text-[#008080]"/> Compliance & Education</h3>
-                    <InputGroup label="Lab Skills (Comma separated)" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
+                    <InputGroup label="Lab Skills (Comma separated)" name="skills" value={data.skills} onChange={handleInputChange}/>
                     <div className="h-4"></div>
-                    <InputGroup label="Certifications & Education" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
+                    <InputGroup label="Certifications & Education" name="education" value={data.education} onChange={handleInputChange}/>
                 </div>
             </div>
 
@@ -227,47 +231,16 @@ export default function LabManagerModernTemplate() {
                         </section>
                     </div>
 
-                    {generatedCvNumber && (
-                      <div style={{ position: 'absolute', bottom: '15px', right: '20px', fontSize: '9px', color: '#9CA3AF', fontFamily: 'monospace', pointerEvents: 'none' }}>
-                        SEQ ID: {generatedCvNumber} • LAB-RECOGNIZED-PROTOCOL
-                      </div>
-                    )}
+                    
                 </div>
             </div>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {showReplaceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100">
-            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">Sync Lab Asset?</h3>
-            <p className="text-sm text-gray-600 mb-6 italic">Proceeding will archive this laboratory operational profile in our secure central repository and generate your verified PDF.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowReplaceModal(false)} className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-xs font-black uppercase">Cancel</button>
-              <button onClick={runDownloadProcess} disabled={isDownloading} className="px-5 py-2 rounded-lg text-white font-black transition-all shadow-md text-xs uppercase" style={{ backgroundColor: templateConfig.primaryColor }}>
-                {isDownloading ? "Archiving..." : "Confirm Sync"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 text-slate-900">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center border-t-8 border-[#008080]">
-            <h3 className="text-2xl font-black mb-2 uppercase tracking-tighter">Record Validated</h3>
-            <p className="text-sm text-gray-600 mb-4 font-medium italic">Laboratory Operations profile has been successfully synced with the scientific directory.</p>
-            <div className="bg-slate-50 border-2 border-dashed border-gray-200 p-5 rounded-xl mb-6 flex flex-col items-center">
-               <Microscope className="text-[#008080] mb-2" size={32}/>
-               <p className="text-[10px] text-gray-400 uppercase font-black tracking-[4px] mb-1">Archive Reference</p>
-               <p className="text-3xl font-black text-[#008080] font-mono tracking-tighter">{generatedCvNumber}</p>
-            </div>
-            <button onClick={() => setShowSuccessModal(false)} className="w-full py-3.5 rounded-lg text-white font-black uppercase tracking-widest shadow-lg hover:shadow-xl transition-all" style={{ backgroundColor: templateConfig.primaryColor }}>Dismiss</button>
-          </div>
-        </div>
-      )}
+      
+
     </div>
   );
 }

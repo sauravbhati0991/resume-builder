@@ -26,13 +26,16 @@ exports.uploadResumePDFController = async (req, res) => {
       });
     }
 
-    // Upload PDF to Cloudinary
-    const upload = await uploadResumePDF(file);
+    // Upload PDF to Cloudinary with cvNumber as public_id
+    console.log(`[uploadResumePDFController] Starting upload for ${cvNumber}...`);
+    const upload = await uploadResumePDF(file, cvNumber);
     const pdfUrl = upload.secure_url;
+    console.log(`[uploadResumePDFController] Uploaded! Cloudinary URL: ${pdfUrl}`);
 
     // Save PDF URL in DB
     resume.pdfUrl = pdfUrl;
     await resume.save();
+    console.log(`[uploadResumePDFController] DB Updated for ${cvNumber}`);
 
     return res.json({
       message: "PDF uploaded successfully",

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import api from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { 
@@ -10,7 +11,7 @@ import {
 // import { getTheme } from "../utils/themesEngine";
 // import { renderHeader, renderSection } from "../utils/layoutEngine";
 
-export default function TechTemplate() {
+export default function TechTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
   const previewRef = useRef();
   
@@ -39,9 +40,11 @@ export default function TechTemplate() {
   const [activeTab, setActiveTab] = useState("editor");
   const [zoom, setZoom] = useState(0.8);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
+  const [savedCvNumber, setSavedCvNumber] = useState("");
 
   // Resume Data State
-  const [data, setData] = useState(templateConfig.defaultData);
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
 
   // Section Order
   const [sections, setSections] = useState(["summary", "skills", "experience", "education"]);
@@ -58,13 +61,12 @@ export default function TechTemplate() {
   };
 
   // --- Handlers ---
-  const handleInputChange = (field, value) => {
-    setData(prev => ({ ...prev, [field]: value }));
-  };
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleArrayChange = (index, field, value, arrayName) => {
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
     const newArray = [...data[arrayName]];
-    newArray[index][field] = value;
+    newArray[index][name] = value;
     setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
 
@@ -82,13 +84,44 @@ export default function TechTemplate() {
     }));
   };
 
-  const saveResume = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(`resume_${templateConfig.name}`, JSON.stringify(data));
+    try {
+      const cvNumber = await saveResume(data);
+      if (cvNumber) {
+        setSavedCvNumber(cvNumber);
+        // Background PDF Upload to Cloudinary
+        try {
+          const element = previewRef.current;
+          const pdfBlob = await html2pdf()
+            .set({
+              margin: 0,
+              filename: `${data.firstName}_Resume.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            })
+            .from(element)
+            .outputPdf('blob');
+
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `${cvNumber}.pdf`);
+          formData.append("cvNumber", cvNumber);
+
+          await api.post("/resume-upload/resume-pdf", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (uploadError) {
+          console.error("Background PDF upload failed:", uploadError);
+        }
+        setShowSaveSuccessModal(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save resume. Please try again.");
+    } finally {
       setIsSaving(false);
-      alert("Resume saved successfully!");
-    }, 1000);
+    }
   };
 
   const downloadPDF = () => {
@@ -97,13 +130,15 @@ export default function TechTemplate() {
       margin: 0,
       filename: `${data.firstName}_Resume.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(element).save();
+    if (element) {
+      html2pdf().set(opt).from(element).save();
+    }
   };
 
-  return (
+return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
       
       {/* --- Header / Toolbar --- */}
@@ -136,7 +171,7 @@ export default function TechTemplate() {
             {/* Right: Actions */}
             <div className="flex items-center gap-2">
               <button 
-                onClick={saveResume}
+                onClick={handleSave}
                 disabled={isSaving}
                 className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
               >
@@ -173,12 +208,12 @@ export default function TechTemplate() {
                   <h3>Personal Information</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
-                  <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
-                  <InputGroup label="Job Title" value={data.title} onChange={(v) => handleInputChange('title', v)} className="md:col-span-2" />
-                  <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
-                  <InputGroup label="Phone" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
-                  <InputGroup label="Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="md:col-span-2" />
+                  <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                  <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                  <InputGroup label="Job Title" name="title" value={data.title} onChange={handleInputChange} className="md:col-span-2"/>
+                  <InputGroup label="Email" name="email" value={data.email} onChange={handleInputChange}/>
+                  <InputGroup label="Phone" name="phone" value={data.phone} onChange={handleInputChange}/>
+                  <InputGroup label="Location" name="location" value={data.location} onChange={handleInputChange} className="md:col-span-2"/>
                 </div>
               </div>
 
@@ -191,7 +226,7 @@ export default function TechTemplate() {
                 <textarea 
                   rows={4}
                   value={data.summary}
-                  onChange={(e) => handleInputChange('summary', e.target.value)}
+                  id="summary" name="summary" onChange={handleInputChange}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Briefly describe your professional background..."
                 />
@@ -223,15 +258,15 @@ export default function TechTemplate() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(index, 'role', v, 'experience')} />
-                        <InputGroup label="Company" value={exp.company} onChange={(v) => handleArrayChange(index, 'company', v, 'experience')} />
-                        <InputGroup label="Dates" value={exp.dates} onChange={(v) => handleArrayChange(index, 'dates', v, 'experience')} className="md:col-span-2" />
+                        <InputGroup label="Role" name="role" value={exp.role} onChange={(e)=>handleArrayChange(index,'experience',e)}/>
+                        <InputGroup label="Company" name="company" value={exp.company} onChange={(e)=>handleArrayChange(index,'experience',e)}/>
+                        <InputGroup label="Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(index,'experience',e)} className="md:col-span-2"/>
                         <div className="md:col-span-2">
                           <label className="text-xs font-medium text-gray-500 mb-1 block">Description</label>
                           <textarea 
                             rows={3}
                             value={exp.description}
-                            onChange={(e) => handleArrayChange(index, 'description', e.target.value, 'experience')}
+                            id="description" name="description" onChange={(e)=>handleArrayChange(index,'experience',e)}
                             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
@@ -250,7 +285,7 @@ export default function TechTemplate() {
                 <textarea 
                   rows={3}
                   value={data.skills}
-                  onChange={(e) => handleInputChange('skills', e.target.value)}
+                  id="skills" name="skills" onChange={handleInputChange}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Java, Python, React, etc."
                 />
@@ -265,7 +300,7 @@ export default function TechTemplate() {
                 <textarea 
                   rows={3}
                   value={data.education}
-                  onChange={(e) => handleInputChange('education', e.target.value)}
+                  id="education" name="education" onChange={handleInputChange}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -364,18 +399,38 @@ export default function TechTemplate() {
 
         </div>
       </div>
+
+      {/* Save Success Modal */}
+      {showSaveSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Saved Successfully!</h3>
+            <p className="text-sm text-gray-500 mb-2">Your resume has been saved to the database.</p>
+            <p className="text-lg font-mono font-bold text-gray-900 mb-6 bg-gray-50 py-3 rounded-lg border border-gray-100">{savedCvNumber}</p>
+            <button onClick={() => setShowSaveSuccessModal(false)} className="w-full py-3 rounded-xl text-white font-bold text-sm uppercase tracking-wider transition-opacity hover:opacity-90" style={{ backgroundColor: '#2563EB' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
 // Simple Helper Component for Inputs
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
+    <label htmlFor={name} className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)}
+      onChange={onChange}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
     />
   </div>

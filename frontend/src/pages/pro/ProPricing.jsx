@@ -6,8 +6,7 @@ export default function ProPricing() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    // Later integrate payment
-    navigate("/pro/payment");
+    navigate("/pro/payment", { state: { amount: 99, planName: "Professional" } });
   };
 
   return (

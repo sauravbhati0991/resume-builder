@@ -18,6 +18,8 @@ export default function ProDashboard() {
   const email = user?.email || "professional@resumea.com";
   const initial = (name?.trim()?.[0] || "P").toUpperCase();
 
+  const [toast, setToast] = useState("");
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
   const [cvNumber, setCvNumber] = useState("");
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,14 @@ export default function ProDashboard() {
 
   return (
     <section className="min-h-screen bg-[#F7FBFF] flex flex-col">
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl">
+          {toast}
+        </div>
+      )}
+
       <div className="mx-auto w-full max-w-6xl px-5 py-10 flex-1">
         {/* HEADER */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -202,17 +212,17 @@ export default function ProDashboard() {
                         Fetch
                       </button>
 
-                      {/* DOWNLOAD */}
-                      {resume.pdfUrl && (
-                        <a
-                          href={`${import.meta.env.VITE_API_BASE_URL}/resumes/view/${resume.cvNumber}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-bold px-3 py-1 bg-green-600 text-white rounded-lg"
-                        >
-                          Download
-                        </a>
-                      )}
+                      {/* DOWNLOAD — uses backend proxy for forced attachment */}
+                      <button
+                        onClick={() => {
+                          const downloadUrl = `${import.meta.env.VITE_API_BASE_URL}/resumes/download/${resume.cvNumber}`;
+                          window.open(downloadUrl, "_blank");
+                        }}
+                        title="Download PDF"
+                        className="text-xs font-bold px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      >
+                        ⬇ Download
+                      </button>
 
                       {/* DELETE */}
                       <button

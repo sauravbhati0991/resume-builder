@@ -7,21 +7,23 @@ import {
   Mail, Phone, MapPin, Microscope, FileText, Fingerprint, Award 
 } from 'lucide-react';
 
-const InputGroup = ({ label, value, onChange, className = "" }) => (
+const InputGroup = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-[0.2em]">{label}</label>
+    <label htmlFor={name} className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-[0.2em]">{label}</label>
     <input 
       type="text" 
+      id={name}
+      name={name}
       value={value} 
-      onChange={(e) => onChange(e.target.value)} 
+      onChange={onChange} 
       className="w-full border-b border-slate-200 bg-transparent px-0 py-2 text-sm focus:outline-none focus:border-[#312e81] transition-colors" 
     />
   </div>
 );
 
-export default function SeniorResearcherPortfolioTemplate() {
+export default function SeniorResearcherPortfolioTemplate({ templateId, saveResume, downloadResume, initialData }) {
   const navigate = useNavigate();
-  const { templateId } = useParams();
+  // // const { templateId } = useParams(); // Now received via props // Now received via props
   const previewRef = useRef();
   
   const templateConfig = {
@@ -45,17 +47,18 @@ export default function SeniorResearcherPortfolioTemplate() {
     }
   };
 
-  const [data, setData] = useState(templateConfig.defaultData);
+  const [data, setData] = useState(initialData || templateConfig.defaultData);
   const [isSaving, setIsSaving] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [cvArchiveId, setCvArchiveId] = useState("");
 
-  const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleInputChange = (e) => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleArrayChange = (index, arrayName, e) => {
+    const { name, value } = e.target;
+    const newArray = [...data[arrayName]];
+    newArray[index][name] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
@@ -139,12 +142,12 @@ export default function SeniorResearcherPortfolioTemplate() {
                 <Fingerprint size={14}/> Identity & Location
               </h3>
               <div className="grid grid-cols-2 gap-8">
-                <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                <InputGroup label="Official Designation" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                <InputGroup label="Institute Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                <InputGroup label="Direct Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                <InputGroup label="Laboratory Base" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+                <InputGroup label="First Name" name="firstName" value={data.firstName} onChange={handleInputChange}/>
+                <InputGroup label="Last Name" name="lastName" value={data.lastName} onChange={handleInputChange}/>
+                <InputGroup label="Official Designation" name="title" value={data.title} onChange={handleInputChange} className="col-span-2"/>
+                <InputGroup label="Institute Email" name="email" value={data.email} onChange={handleInputChange}/>
+                <InputGroup label="Direct Line" name="phone" value={data.phone} onChange={handleInputChange}/>
+                <InputGroup label="Laboratory Base" name="location" value={data.location} onChange={handleInputChange} className="col-span-2"/>
               </div>
             </section>
 
@@ -155,7 +158,7 @@ export default function SeniorResearcherPortfolioTemplate() {
               <textarea 
                 rows={5} 
                 value={data.summary} 
-                onChange={(e)=>handleInputChange('summary', e.target.value)} 
+                id="summary" name="summary" onChange={handleInputChange} 
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl p-5 text-sm leading-relaxed text-slate-600 italic focus:outline-none focus:ring-2 focus:ring-[#312e81]/10 transition-all"
               />
             </section>
@@ -170,10 +173,10 @@ export default function SeniorResearcherPortfolioTemplate() {
                   <div key={i} className="p-6 border border-slate-100 rounded-2xl relative group bg-white shadow-sm">
                     <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
                     <div className="grid grid-cols-2 gap-6">
-                      <InputGroup label="Rank" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                      <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                      <InputGroup label="Tenure Dates" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                      <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 text-sm border-b border-slate-100 p-2 focus:outline-none focus:border-[#312e81]"/>
+                      <InputGroup label="Rank" name="role" value={exp.role} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                      <InputGroup label="Organization" name="company" value={exp.company} onChange={(e)=>handleArrayChange(i,'experience',e)}/>
+                      <InputGroup label="Tenure Dates" name="dates" value={exp.dates} onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2"/>
+                      <textarea rows={3} value={exp.description} id="description" name="description" onChange={(e)=>handleArrayChange(i,'experience',e)} className="col-span-2 text-sm border-b border-slate-100 p-2 focus:outline-none focus:border-[#312e81]"/>
                     </div>
                   </div>
                 ))}

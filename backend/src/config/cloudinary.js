@@ -30,16 +30,26 @@ exports.uploadImageToCloudinary = async (file) => {
 // ===============================
 // Upload Resume PDF
 // ===============================
-exports.uploadResumePDF = async (file) => {
+exports.uploadResumePDF = async (file, cvNumber) => {
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
           folder: "resumea/resumes",
-          resource_type: "raw"
+          resource_type: "image",
+          format: "pdf",
+          public_id: cvNumber,
+          overwrite: true,
+          invalidate: true,
+          type: "upload",
+          access_mode: "public"
         },
         (error, result) => {
-          if (error) return reject(error);
+          if (error) {
+            console.error("[Cloudinary] Upload Stream Error:", error);
+            return reject(error);
+          }
+          console.log("[Cloudinary] Upload Result:", JSON.stringify(result, null, 2));
           resolve(result);
         }
       )
@@ -52,6 +62,16 @@ exports.uploadResumePDF = async (file) => {
 // ===============================
 exports.deleteFromCloudinary = async (publicId) => {
   return cloudinary.uploader.destroy(publicId);
+};
+
+// ===============================
+// Delete Resume PDF
+// ===============================
+exports.deleteResumePDF = async (cvNumber) => {
+  const publicId = `resumea/resumes/${cvNumber}`;
+  // Try deleting as both types
+  await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+  return cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
 };
 
 console.log("Cloud:", process.env.CLOUDINARY_CLOUD_NAME);

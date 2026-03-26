@@ -105,3 +105,23 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch dashboard stats" });
   }
 };
+
+// ✅ GET USERS LIST
+exports.getUsersList = async (req, res) => {
+  try {
+    const users = await User.find({}, "fullName email onboarding.accountType createdAt").sort({ createdAt: -1 });
+
+    const formattedUsers = users.map(u => ({
+      id: u._id,
+      name: u.fullName,
+      email: u.email,
+      accountType: u.onboarding?.accountType || "professional",
+      createdAt: u.createdAt
+    }));
+
+    res.json(formattedUsers);
+  } catch (error) {
+    console.error("Users List Error:", error);
+    res.status(500).json({ message: "Failed to fetch user list" });
+  }
+};
