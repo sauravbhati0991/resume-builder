@@ -16,20 +16,6 @@ L.Icon.Default.mergeOptions({
 });
 
 /* ---------------- Helpers ---------------- */
-function haversineKm(a, b) {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const lat1 = (a.lat * Math.PI) / 180;
-  const lat2 = (b.lat * Math.PI) / 180;
-
-  const x =
-    Math.sin(dLat / 2) ** 2 +
-    Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-
-  return 2 * R * Math.asin(Math.sqrt(x));
-}
-
 function googleDirectionsUrl(lat, lng) {
   return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
@@ -67,13 +53,11 @@ export default function StudentPrintCenters() {
           lng: pos.coords.longitude,
         });
       },
-      () => {
-        setUserLoc(fallback);
-      }
+      () => setUserLoc(fallback)
     );
   }, []);
 
-  /* -------- Fetch Real Nearby Shops from OSM -------- */
+  /* -------- Fetch Nearby Shops (Optimized) -------- */
   useEffect(() => {
     if (!userLoc) return;
 
@@ -81,51 +65,110 @@ export default function StudentPrintCenters() {
       setLoading(true);
 
       const overpassQuery = `
-        [out:json];
+        [out:json][timeout:25];
         (
-          node["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
-          way["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
-          node["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
-          way["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
-          node["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
-          way["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
+          node["shop"](around:8000,${userLoc.lat},${userLoc.lng});
+          node["amenity"="internet_cafe"](around:8000,${userLoc.lat},${userLoc.lng});
         );
-        out center;
+        out body;
       `;
 
       try {
-        const res = await fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: overpassQuery,
+        const res = await fetch(
+          "https://overpass.kumi.systems/api/interpreter",
+          {
+            method: "POST",
+            body: overpassQuery,
+          }
+        );
+
+        const text = await res.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("Non JSON response:", text);
+          throw new Error("Invalid response");
+        }
+
+        if (!data?.elements) throw new Error("No data");
+
+        const keywords = ["xerox", "print", "cyber", "copy"];
+
+        const filtered = data.elements.filter((el) => {
+          const tags = el.tags || {};
+          const name = tags.name?.toLowerCase() || "";
+
+          return (
+            keywords.some((k) => name.includes(k)) ||
+            tags.shop === "copyshop" ||
+            tags.shop === "printing" ||
+            tags.amenity === "internet_cafe"
+          );
         });
 
-        const data = await res.json();
+        const uniqueMap = new Map();
 
-        const formatted = data.elements.map((el) => {
+        filtered.forEach((el) => {
           const tags = el.tags || {};
+          const lat = el.lat;
+          const lng = el.lon;
+
+          if (!lat || !lng) return;
+
+          const key = `${lat}-${lng}`;
+          if (uniqueMap.has(key)) return;
+
           let name = tags.name;
 
-          // Fallback naming based on tags if name is missing
           if (!name) {
-            if (tags.amenity === "internet_cafe") name = "Cybercenter";
+            if (tags.amenity === "internet_cafe") name = "Cyber Cafe";
             else if (tags.shop === "copyshop") name = "Xerox Shop";
             else if (tags.shop === "printing") name = "Print Shop";
             else name = "Print Center";
           }
 
-          return {
+          uniqueMap.set(key, {
             id: el.id,
-            name: name,
-            address: tags["addr:street"] || tags["addr:full"] || "Address not available",
+            name,
+            address:
+              tags["addr:street"] ||
+              tags["addr:full"] ||
+              "Address not available",
             phone: tags.phone || "",
-            lat: el.lat || el.center?.lat,
-            lng: el.lon || el.center?.lon,
-          };
+            lat,
+            lng,
+          });
         });
 
-        setCenters(formatted);
+        const result = Array.from(uniqueMap.values());
+
+        if (result.length === 0) {
+          setCenters([
+            {
+              id: "fallback",
+              name: "No mapped shops nearby",
+              address: "Try searching a nearby city",
+              lat: userLoc.lat,
+              lng: userLoc.lng,
+            },
+          ]);
+        } else {
+          setCenters(result);
+        }
       } catch (err) {
-        console.error("OSM fetch failed", err);
+        console.error("OSM fetch failed:", err);
+
+        setCenters([
+          {
+            id: "error",
+            name: "Unable to load nearby shops",
+            address: "Please try again later",
+            lat: userLoc.lat,
+            lng: userLoc.lng,
+          },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -134,26 +177,33 @@ export default function StudentPrintCenters() {
     fetchPlaces();
   }, [userLoc]);
 
+  /* -------- Search Filter -------- */
   const filtered = useMemo(() => {
     if (!query) return centers;
+
     return centers.filter((c) =>
-      `${c.name} ${c.address}`.toLowerCase().includes(query.toLowerCase())
+      `${c.name} ${c.address}`
+        .toLowerCase()
+        .includes(query.toLowerCase())
     );
   }, [query, centers]);
 
   const selected =
-    filtered.find((c) => c.id === selectedId) || filtered[0] || null;
+    filtered.find((c) => c.id === selectedId) ||
+    filtered[0] ||
+    null;
 
   const mapCenter = selected || userLoc || fallback;
 
+  /* -------- UI (UNCHANGED) -------- */
   return (
     <section className="min-h-screen bg-[#F7FBFF]">
       <div className="max-w-7xl mx-auto px-5 py-8">
+
         <h1 className="text-3xl font-extrabold mb-4">
           Nearby Print Centers
         </h1>
 
-        {/* Search */}
         <div className="relative mb-6">
           <input
             value={query}
@@ -165,7 +215,7 @@ export default function StudentPrintCenters() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_520px] gap-6">
-          {/* List */}
+
           <div className="space-y-4">
             {loading && <div>Loading nearby shops...</div>}
 
@@ -177,6 +227,7 @@ export default function StudentPrintCenters() {
               >
                 <div className="font-bold">{c.name}</div>
                 <div className="text-sm text-gray-500">{c.address}</div>
+
                 <div className="flex gap-3 mt-2">
                   <a
                     href={googleDirectionsUrl(c.lat, c.lng)}
@@ -187,6 +238,7 @@ export default function StudentPrintCenters() {
                   >
                     Directions
                   </a>
+
                   {c.phone && (
                     <a
                       href={`tel:${c.phone}`}
@@ -205,7 +257,6 @@ export default function StudentPrintCenters() {
             )}
           </div>
 
-          {/* Map */}
           <div className="bg-white rounded-xl overflow-hidden border">
             <div className="h-[520px]">
               <MapContainer
