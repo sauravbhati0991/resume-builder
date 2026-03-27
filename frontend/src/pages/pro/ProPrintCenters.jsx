@@ -68,59 +68,110 @@ export default function ProPrintCenters() {
       setLoading(true);
 
       const overpassQuery = `
-        [out:json];
-        (
-          node["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
-          way["amenity"="internet_cafe"](around:5000,${userLoc.lat},${userLoc.lng});
-          node["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
-          way["shop"~"copyshop|printing|stationery"](around:5000,${userLoc.lat},${userLoc.lng});
-          node["office"="copyshop"](around:5000,${userLoc.lat},${userLoc.lng});
-          way["office"="copyshop"](around:5000,${userLoc.lat},${userLoc.lng});
-          node["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
-          way["name"~"Cyber|Print|Xerox",i](around:5000,${userLoc.lat},${userLoc.lng});
-        );
-        out center;
-      `;
+      [out:json][timeout:25];
+      (
+        node["shop"](around:8000,${userLoc.lat},${userLoc.lng});
+        node["amenity"="internet_cafe"](around:8000,${userLoc.lat},${userLoc.lng});
+      );
+      out body;
+    `;
 
       try {
         const res = await fetch(
-          "https://overpass-api.de/api/interpreter",
+          "https://overpass.kumi.systems/api/interpreter",
           {
             method: "POST",
             body: overpassQuery,
           }
         );
 
-        const data = await res.json();
+        const text = await res.text();
 
-        const formatted = data.elements.map((el) => {
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("Non JSON response:", text);
+          throw new Error("Invalid response");
+        }
+
+        if (!data?.elements) throw new Error("No data");
+
+        const keywords = ["xerox", "print", "cyber", "copy"];
+
+        const filtered = data.elements.filter((el) => {
           const tags = el.tags || {};
+          const name = tags.name?.toLowerCase() || "";
+
+          return (
+            keywords.some((k) => name.includes(k)) ||
+            tags.shop === "copyshop" ||
+            tags.shop === "printing" ||
+            tags.amenity === "internet_cafe"
+          );
+        });
+
+        const uniqueMap = new Map();
+
+        filtered.forEach((el) => {
+          const tags = el.tags || {};
+          const lat = el.lat;
+          const lng = el.lon;
+
+          if (!lat || !lng) return;
+
+          const key = `${lat}-${lng}`;
+          if (uniqueMap.has(key)) return;
+
           let name = tags.name;
 
-          // Fallback naming based on tags if name is missing
           if (!name) {
-            if (tags.amenity === "internet_cafe") name = "Cybercenter";
-            else if (tags.shop === "copyshop" || tags.office === "copyshop") name = "Xerox Shop";
+            if (tags.amenity === "internet_cafe") name = "Cyber Cafe";
+            else if (tags.shop === "copyshop") name = "Xerox Shop";
             else if (tags.shop === "printing") name = "Print Shop";
             else name = "Print Center";
           }
 
-          return {
+          uniqueMap.set(key, {
             id: el.id,
-            name: name,
+            name,
             address:
               tags["addr:street"] ||
               tags["addr:full"] ||
               "Address not available",
             phone: tags.phone || "",
-            lat: el.lat || el.center?.lat,
-            lng: el.lon || el.center?.lon,
-          };
+            lat,
+            lng,
+          });
         });
 
-        setCenters(formatted);
+        const result = Array.from(uniqueMap.values());
+
+        if (result.length === 0) {
+          setCenters([
+            {
+              id: "fallback",
+              name: "No mapped shops nearby",
+              address: "Try searching a nearby city",
+              lat: userLoc.lat,
+              lng: userLoc.lng,
+            },
+          ]);
+        } else {
+          setCenters(result);
+        }
       } catch (err) {
-        console.error("OSM fetch failed", err);
+        console.error("OSM fetch failed:", err);
+
+        setCenters([
+          {
+            id: "error",
+            name: "Unable to load nearby shops",
+            address: "Please try again later",
+            lat: userLoc.lat,
+            lng: userLoc.lng,
+          },
+        ]);
       } finally {
         setLoading(false);
       }

@@ -54,9 +54,7 @@ export default function ProDashboard() {
     try {
       const { data } = await api.get(`/resumes/cv/${cv}`);
 
-      if (data?.pdfUrl) {
-        window.open(data.pdfUrl, "_blank");
-      } else if (data?.cvNumber) {
+      if (data?.cvNumber) {
         window.open(
           `${import.meta.env.VITE_API_BASE_URL}/resumes/view/${data.cvNumber}`,
           "_blank"
@@ -67,6 +65,26 @@ export default function ProDashboard() {
     } catch (err) {
       console.error(err);
       alert("Resume not found");
+    }
+  };
+
+  const handleDownload = async (cvNumber) => {
+    try {
+      const res = await api.get(`/resumes/view/${cvNumber}`, {
+        responseType: "blob"
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cvNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+    } catch (err) {
+      console.error("Download failed", err);
     }
   };
 
@@ -203,33 +221,26 @@ export default function ProDashboard() {
                     </div>
 
                     <div className="flex gap-2">
-                      {/* FETCH */}
+
+                      {/* EDIT */}
                       <button
-                        onClick={() => {
-                          setCvNumber(resume.cvNumber);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
+                        onClick={() =>
+                          navigate(`/pro/builder/${resume.templateId}?cv=${resume.cvNumber}`)
+                        }
                         className="text-xs font-bold px-3 py-1 bg-blue-600 text-white rounded-lg"
                       >
-                        Fetch
+                        Edit
                       </button>
 
-                      {/* DOWNLOAD — uses backend proxy for forced attachment */}
-                      <button
-                        onClick={() => {
-                          console.log("Download clicked for resume:", resume.cvNumber, "pdfUrl:", resume.pdfUrl);
-                          if (resume.pdfUrl) {
-                            window.open(resume.pdfUrl, "_blank");
-                          } else {
-                            const downloadUrl = `${import.meta.env.VITE_API_BASE_URL}/resumes/download/${resume.cvNumber}`;
-                            window.open(downloadUrl, "_blank");
-                          }
-                        }}
-                        title="Download PDF"
-                        className="text-xs font-bold px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                      >
-                        ⬇ Download
-                      </button>
+                      {/* DOWNLOAD */}
+                      {resume.pdfUrl && (
+                        <button
+                          onClick={() => handleDownload(resume.cvNumber)}
+                          className="text-xs font-bold px-3 py-1 bg-green-600 text-white rounded-lg"
+                        >
+                          Download
+                        </button>
+                      )}
 
                       {/* DELETE */}
                       <button
@@ -238,6 +249,7 @@ export default function ProDashboard() {
                       >
                         Delete
                       </button>
+
                     </div>
                   </div>
                 ))}
