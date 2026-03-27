@@ -6,11 +6,11 @@ import { ArrowLeft, Save, Download, Plus, Trash2, Loader2, Palette, Eye, Type, C
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
-      onChange={(e) => onChange(e.target.value)} 
-      className="w-full border-b-2 border-slate-200 bg-transparent py-2 text-sm focus:outline-none focus:border-purple-600 transition-all font-medium" 
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full border-b-2 border-slate-200 bg-transparent py-2 text-sm focus:outline-none focus:border-purple-600 transition-all font-medium"
     />
   </div>
 );
@@ -23,7 +23,7 @@ export default function ArtDirectorProTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   const templateConfig = {
     name: "Art Director Pro",
     primaryColor: "#2D0031", // Deep Eggplant
@@ -52,10 +52,10 @@ export default function ArtDirectorProTemplate({
   const [data, setData] = useState(initialData || templateConfig.defaultData);
 
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleArrayChange = (index, field, value, arrayName) => {
+    const newArray = [...data[arrayName]];
+    newArray[index][field] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
@@ -100,188 +100,188 @@ export default function ArtDirectorProTemplate({
 
   return (
     <div className="min-h-screen w-full bg-[#f3f3f3] flex flex-col overflow-hidden font-sans text-slate-900">
-      
+
       {/* STUDIO TOOLBAR */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-none p-4 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-                <button onClick={() => navigate('/templates')} className="text-xs font-black hover:bg-slate-100 h-9 px-4 uppercase tracking-tighter border-2 border-black transition-all">
-                  <ArrowLeft className="w-4 h-4 inline mr-2" /> Back
-                </button>
-                <div className="flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-purple-700" />
-                  <span className="font-black text-sm uppercase tracking-widest">{templateConfig.name}</span>
-                </div>
-            </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/templates')} className="text-xs font-black hover:bg-slate-100 h-9 px-4 uppercase tracking-tighter border-2 border-black transition-all">
+              <ArrowLeft className="w-4 h-4 inline mr-2" /> Back
+            </button>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border"
-              >
-                {isSaving ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <Save className="mr-2" />
-                )}
-
-                {generatedCvNumber || cvNumber ? "Update" : "Save"}
-              </button>
-              <button
-                onClick={() => handlePdfDownload(generatedCvNumber)}
-                disabled={!generatedCvNumber}
-                className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md ${generatedCvNumber
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-              >
-                <Download className="mr-2" /> PDF
-              </button>
+              <Palette className="w-5 h-5 text-purple-700" />
+              <span className="font-black text-sm uppercase tracking-widest">{templateConfig.name}</span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border"
+            >
+              {isSaving ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Save className="mr-2" />
+              )}
+
+              {generatedCvNumber || cvNumber ? "Update" : "Save"}
+            </button>
+            <button
+              onClick={() => handlePdfDownload(generatedCvNumber)}
+              disabled={!generatedCvNumber}
+              className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md ${generatedCvNumber
+                ? "bg-green-600 text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+            >
+              <Download className="mr-2" /> Download
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-8 h-full">
-            
-            {/* CREATIVE INPUTS */}
-            <div className="h-full overflow-y-auto pr-4 custom-scrollbar pb-20 space-y-8 mt-4">
-                <div className="bg-white p-8 border-2 border-black">
-                    <h3 className="text-xs font-black mb-6 flex items-center gap-2 text-black uppercase tracking-[0.2em] border-b-2 border-black pb-2"><Eye className="w-4 h-4" /> Visual Identity</h3>
-                    <div className="grid grid-cols-2 gap-6">
-                        <InputGroup label="First_Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last_Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Creative_Role" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Contact" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="Base_Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
-                    </div>
-                </div>
 
-                <div className="bg-white p-8 border-2 border-black">
-                    <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Director's Statement</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full bg-slate-50 p-4 text-sm font-medium focus:ring-0 focus:outline-none border-b-4 border-purple-200 mt-2"/>
-                </div>
-
-                <div className="bg-white p-8 border-2 border-black">
-                     <div className="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-black">Campaign History</h3>
-                        <button onClick={addExperience} className="text-[10px] bg-black text-white px-3 py-1 font-black uppercase">+ Add_Entry</button>
-                     </div>
-                     {data.experience.map((exp, i) => (
-                        <div key={i} className="mb-6 p-6 bg-slate-50 border-l-8 border-purple-600 relative group">
-                            <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Studio/Agency" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Timeline" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} placeholder="Describe the creative vision, team management, and KPIs..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border-none bg-white p-3 text-sm font-medium mt-2"/>
-                            </div>
-                        </div>
-                     ))}
-                </div>
-
-                <div className="bg-white p-8 border-2 border-black">
-                    <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Creative Toolbox</h3>
-                    <InputGroup label="Skills & Software" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
-                    <div className="h-8"></div>
-                    <InputGroup label="Education & Credentials" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
-                </div>
+          {/* CREATIVE INPUTS */}
+          <div className="h-full overflow-y-auto pr-4 custom-scrollbar pb-20 space-y-8 mt-4">
+            <div className="bg-white p-8 border-2 border-black">
+              <h3 className="text-xs font-black mb-6 flex items-center gap-2 text-black uppercase tracking-[0.2em] border-b-2 border-black pb-2"><Eye className="w-4 h-4" /> Visual Identity</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <InputGroup label="First_Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
+                <InputGroup label="Last_Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
+                <InputGroup label="Creative_Role" value={data.title} onChange={(v) => handleInputChange('title', v)} className="col-span-2" />
+                <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
+                <InputGroup label="Contact" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
+                <InputGroup label="Base_Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="col-span-2" />
+              </div>
             </div>
 
-            <div className="h-full bg-slate-800 flex justify-center p-12 overflow-auto custom-scrollbar">
-                <div 
-                    id="resume-preview"
-                    ref={previewRef} 
-                    style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', padding: '0', display: 'flex', flexDirection: 'column' }}>
-                    
-                    <div style={{ border: `4px solid ${templateConfig.primaryColor}`, margin: '25px', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        
-                        {/* Masthead */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `4px solid ${templateConfig.primaryColor}`, padding: '40px' }}>
-                            <div style={{ maxWidth: '60%' }}>
-                                <h1 style={{ fontSize: '56px', fontWeight: '900', color: templateConfig.primaryColor, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '0.8', margin: 0 }}>
-                                    {data.firstName}<br/>{data.lastName}
-                                </h1>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ backgroundColor: templateConfig.accentColor, color: 'black', padding: '10px 20px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', border: '2px solid black', display: 'inline-block' }}>
-                                    {data.title}
-                                </div>
-                                <div style={{ marginTop: '20px', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: '#666', letterSpacing: '1px' }}>
-                                    {data.location} • {data.phone}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Secondary Navigation (Contact) */}
-                        <div style={{ padding: '15px 40px', backgroundColor: templateConfig.primaryColor, color: templateConfig.accentColor, fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Portfolio: linktr.ee/{data.lastName.toLowerCase()}</span>
-                            <span>{data.email}</span>
-                        </div>
-
-                        {/* Content Grid */}
-                        <div style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: '40px', flex: 1 }}>
-                            
-                            {/* Left Column: Sidebar Info */}
-                            <div style={{ borderRight: '2px solid #eee', paddingRight: '20px' }}>
-                                <section style={{ marginBottom: '40px' }}>
-                                    <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Type size={14} /> Toolbox
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {data.skills.split(',').map((skill, i) => (
-                                            <div key={i} style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#333', borderBottom: '1px solid #f0f0f0', paddingBottom: '4px' }}>
-                                                {skill.trim()}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section>
-                                    <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Camera size={14} /> Academic
-                                    </h3>
-                                    <p style={{ fontSize: '11px', lineHeight: '1.6', fontWeight: '700', color: '#555', textTransform: 'uppercase' }}>
-                                        {data.education}
-                                    </p>
-                                </section>
-                            </div>
-
-                            {/* Right Column: Experience */}
-                            <div>
-                                <section style={{ marginBottom: '40px', borderBottom: '1px solid #eee', paddingBottom: '30px' }}>
-                                    <p style={{ fontSize: '15px', lineHeight: '1.7', color: '#111', fontWeight: '500', fontStyle: 'italic' }}>
-                                        "{data.summary}"
-                                    </p>
-                                </section>
-
-                                <section>
-                                    <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '30px' }}>Campaign History</h3>
-                                    {data.experience.map((exp, i) => (
-                                        <div key={i} style={{ marginBottom: '40px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                                                <h4 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', color: '#000', margin: 0 }}>{exp.role}</h4>
-                                                <span style={{ fontSize: '11px', fontWeight: '800', color: '#999' }}>{exp.dates}</span>
-                                            </div>
-                                            <div style={{ fontSize: '12px', fontWeight: '900', color: templateConfig.primaryColor, marginBottom: '12px', textTransform: 'uppercase' }}>{exp.company}</div>
-                                            <p style={{ fontSize: '12px', lineHeight: '1.6', color: '#444' }}>{exp.description}</p>
-                                        </div>
-                                    ))}
-                                </section>
-                            </div>
-                        </div>
-
-                        {/* Footer / Serial */}
-                        {generatedCvNumber && (
-                            <div style={{ padding: '15px 40px', borderTop: '2px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '9px', fontWeight: '900', color: '#ccc', textTransform: 'uppercase', letterSpacing: '2px' }}>Director's Cut // Ver. 2.0</span>
-                                <span style={{ fontSize: '10px', fontWeight: '900', color: '#333', fontFamily: 'monospace' }}>#{generatedCvNumber}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
+            <div className="bg-white p-8 border-2 border-black">
+              <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Director's Statement</h3>
+              <textarea rows={4} value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full bg-slate-50 p-4 text-sm font-medium focus:ring-0 focus:outline-none border-b-4 border-purple-200 mt-2" />
             </div>
+
+            <div className="bg-white p-8 border-2 border-black">
+              <div className="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-black">Campaign History</h3>
+                <button onClick={addExperience} className="text-[10px] bg-black text-white px-3 py-1 font-black uppercase">+ Add_Entry</button>
+              </div>
+              {data.experience.map((exp, i) => (
+                <div key={i} className="mb-6 p-6 bg-slate-50 border-l-8 border-purple-600 relative group">
+                  <button onClick={() => removeExperience(i)} className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(i, 'role', v, 'experience')} />
+                    <InputGroup label="Studio/Agency" value={exp.company} onChange={(v) => handleArrayChange(i, 'company', v, 'experience')} />
+                    <InputGroup label="Timeline" value={exp.dates} onChange={(v) => handleArrayChange(i, 'dates', v, 'experience')} className="col-span-2" />
+                    <textarea rows={3} placeholder="Describe the creative vision, team management, and KPIs..." value={exp.description} onChange={(e) => handleArrayChange(i, 'description', e.target.value, 'experience')} className="col-span-2 border-none bg-white p-3 text-sm font-medium mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white p-8 border-2 border-black">
+              <h3 className="text-xs font-black mb-4 uppercase tracking-[0.2em] text-black border-b-2 border-black pb-2">Creative Toolbox</h3>
+              <InputGroup label="Skills & Software" value={data.skills} onChange={(v) => handleInputChange('skills', v)} />
+              <div className="h-8"></div>
+              <InputGroup label="Education & Credentials" value={data.education} onChange={(v) => handleInputChange('education', v)} />
+            </div>
+          </div>
+
+          <div className="h-full bg-slate-800 flex justify-center p-12 overflow-auto custom-scrollbar">
+            <div
+              id="resume-preview"
+              ref={previewRef}
+              style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', padding: '0', display: 'flex', flexDirection: 'column' }}>
+
+              <div style={{ border: `4px solid ${templateConfig.primaryColor}`, margin: '25px', flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+
+                {/* Masthead */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `4px solid ${templateConfig.primaryColor}`, padding: '40px' }}>
+                  <div style={{ maxWidth: '60%' }}>
+                    <h1 style={{ fontSize: '56px', fontWeight: '900', color: templateConfig.primaryColor, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '0.8', margin: 0 }}>
+                      {data.firstName}<br />{data.lastName}
+                    </h1>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ backgroundColor: templateConfig.accentColor, color: 'black', padding: '10px 20px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '14px', border: '2px solid black', display: 'inline-block' }}>
+                      {data.title}
+                    </div>
+                    <div style={{ marginTop: '20px', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: '#666', letterSpacing: '1px' }}>
+                      {data.location} • {data.phone}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Secondary Navigation (Contact) */}
+                <div style={{ padding: '15px 40px', backgroundColor: templateConfig.primaryColor, color: templateConfig.accentColor, fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Portfolio: linktr.ee/{data.lastName.toLowerCase()}</span>
+                  <span>{data.email}</span>
+                </div>
+
+                {/* Content Grid */}
+                <div style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: '40px', flex: 1 }}>
+
+                  {/* Left Column: Sidebar Info */}
+                  <div style={{ borderRight: '2px solid #eee', paddingRight: '20px' }}>
+                    <section style={{ marginBottom: '40px' }}>
+                      <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Type size={14} /> Toolbox
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {data.skills.split(',').map((skill, i) => (
+                          <div key={i} style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#333', borderBottom: '1px solid #f0f0f0', paddingBottom: '4px' }}>
+                            {skill.trim()}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section>
+                      <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Camera size={14} /> Academic
+                      </h3>
+                      <p style={{ fontSize: '11px', lineHeight: '1.6', fontWeight: '700', color: '#555', textTransform: 'uppercase' }}>
+                        {data.education}
+                      </p>
+                    </section>
+                  </div>
+
+                  {/* Right Column: Experience */}
+                  <div>
+                    <section style={{ marginBottom: '40px', borderBottom: '1px solid #eee', paddingBottom: '30px' }}>
+                      <p style={{ fontSize: '15px', lineHeight: '1.7', color: '#111', fontWeight: '500', fontStyle: 'italic' }}>
+                        "{data.summary}"
+                      </p>
+                    </section>
+
+                    <section>
+                      <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', color: templateConfig.primaryColor, marginBottom: '30px' }}>Campaign History</h3>
+                      {data.experience.map((exp, i) => (
+                        <div key={i} style={{ marginBottom: '40px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                            <h4 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', color: '#000', margin: 0 }}>{exp.role}</h4>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#999' }}>{exp.dates}</span>
+                          </div>
+                          <div style={{ fontSize: '12px', fontWeight: '900', color: templateConfig.primaryColor, marginBottom: '12px', textTransform: 'uppercase' }}>{exp.company}</div>
+                          <p style={{ fontSize: '12px', lineHeight: '1.6', color: '#444' }}>{exp.description}</p>
+                        </div>
+                      ))}
+                    </section>
+                  </div>
+                </div>
+
+                {/* Footer / Serial */}
+                {generatedCvNumber && (
+                  <div style={{ padding: '15px 40px', borderTop: '2px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '900', color: '#ccc', textTransform: 'uppercase', letterSpacing: '2px' }}>Director's Cut // Ver. 2.0</span>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#333', fontFamily: 'monospace' }}>#{generatedCvNumber}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

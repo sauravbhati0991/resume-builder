@@ -18,11 +18,11 @@ export default function PublicSectorDirectorEliteTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   const templateConfig = {
     name: "Public Sector Director Elite",
-    primaryColor: "#8B0000", 
-    accentColor: "#D3D3D3",  
+    primaryColor: "#8B0000",
+    accentColor: "#D3D3D3",
     defaultData: {
       firstName: "Jonathan",
       lastName: "Sterling",
@@ -93,136 +93,136 @@ export default function PublicSectorDirectorEliteTemplate({
       {/* HEADER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/90 backdrop-blur-sm border border-gray-200 shadow-xl rounded-xl p-4 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-                <button onClick={() => navigate('/templates')} className="inline-flex items-center text-sm font-medium hover:bg-gray-100 h-9 px-3 rounded-md text-gray-600 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Back</button>
-                <div className="h-6 w-px bg-gray-200 mx-2"></div>
-                <span className="font-black text-[#8B0000] tracking-widest uppercase text-xs">Executive Builder</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all text-slate-700"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {generatedCvNumber || cvNumber ? "Update_Registry" : "Sync_Initial_Audit"}
-                </button>
-                <button
-                  onClick={() => handlePdfDownload(generatedCvNumber)}
-                  disabled={!generatedCvNumber}
-                  className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-all active:scale-95 ${generatedCvNumber
-                    ? "bg-slate-800 hover:bg-slate-900"
-                    : "bg-gray-300 cursor-not-allowed opacity-50"
-                    }`}
-                  style={generatedCvNumber ? { backgroundColor: templateConfig.primaryColor } : {}}
-                >
-                  <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
-                </button>
-            </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/templates')} className="inline-flex items-center text-sm font-medium hover:bg-gray-100 h-9 px-3 rounded-md text-gray-600 transition-colors"><ArrowLeft className="w-4 h-4 mr-2" /> Back</button>
+            <div className="h-6 w-px bg-gray-200 mx-2"></div>
+            <span className="font-black text-[#8B0000] tracking-widest uppercase text-xs">Executive Builder</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all text-slate-700"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {generatedCvNumber || cvNumber ? "Update" : "Save"}
+            </button>
+            <button
+              onClick={() => handlePdfDownload(generatedCvNumber)}
+              disabled={!generatedCvNumber}
+              className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-all active:scale-95 ${generatedCvNumber
+                ? "bg-slate-800 hover:bg-slate-900"
+                : "bg-gray-300 cursor-not-allowed opacity-50"
+                }`}
+              style={generatedCvNumber ? { backgroundColor: templateConfig.primaryColor } : {}}
+            >
+              <Download className="w-4 h-4 mr-2" /> Download
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-8 h-full">
-            {/* EDITOR */}
-            <div className="h-full overflow-y-auto pr-2 custom-scrollbar pb-24 space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] tracking-tighter uppercase"><Landmark size={20}/> Director Identity</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                        <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                        <InputGroup label="Current Command/Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                        <InputGroup label="Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                        <InputGroup label="Direct Line" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                        <InputGroup label="HQ Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] uppercase tracking-tighter"><Award size={20}/> Executive Summary</h3>
-                    <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-[#8B0000] outline-none bg-gray-50/50 leading-relaxed font-serif italic"/>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                     <div className="flex justify-between mb-4 items-center font-black text-[#8B0000] uppercase tracking-tighter">
-                        <h3 className="flex items-center gap-2"><Briefcase size={20}/> Service Record</h3>
-                        <button onClick={addExperience} className="text-[10px] bg-[#8B0000] text-white px-3 py-1.5 rounded shadow-md hover:opacity-80 transition-opacity">Add Mandate</button>
-                     </div>
-                     {data.experience.map((exp, i) => (
-                        <div key={i} className="mb-4 p-5 border-2 rounded-xl bg-gray-50/30 relative group border-gray-100">
-                            <button onClick={()=>removeExperience(i)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                                <InputGroup label="Agency/Municipality" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                                <InputGroup label="Dates of Service" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                                <textarea rows={3} value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-[#8B0000] outline-none"/>
-                            </div>
-                        </div>
-                     ))}
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] uppercase tracking-tighter"><Scale size={20}/> Competencies & Pedigree</h3>
-                    <InputGroup label="Core Skills (Comma separated)" value={data.skills} onChange={(v)=>handleInputChange('skills', v)}/>
-                    <div className="h-4"></div>
-                    <InputGroup label="Education & Credentials" value={data.education} onChange={(v)=>handleInputChange('education', v)}/>
-                </div>
+          {/* EDITOR */}
+          <div className="h-full overflow-y-auto pr-2 custom-scrollbar pb-24 space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] tracking-tighter uppercase"><Landmark size={20} /> Director Identity</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
+                <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
+                <InputGroup label="Current Command/Title" value={data.title} onChange={(v) => handleInputChange('title', v)} className="col-span-2" />
+                <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
+                <InputGroup label="Direct Line" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
+                <InputGroup label="HQ Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="col-span-2" />
+              </div>
             </div>
 
-            {/* PREVIEW */}
-            <div className="h-full bg-slate-300/50 rounded-xl overflow-auto flex justify-center p-8 custom-scrollbar shadow-inner text-slate-900">
-                <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', position: 'relative', fontFamily: '"Georgia", serif' }}>
-                    <div style={{ textAlign: 'center', padding: '50px 50px 20px', borderBottom: `3px double ${templateConfig.primaryColor}`, margin: '0 40px' }}>
-                        <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#111', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>
-                            {data.firstName} <span style={{ color: templateConfig.primaryColor }}>{data.lastName}</span>
-                        </h1>
-                        <p style={{ fontSize: '15px', color: '#333', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px' }}>{data.title}</p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '11px', color: '#555', backgroundColor: templateConfig.accentColor, padding: '8px', borderRadius: '2px' }}>
-                            <span>{data.email}</span> <span>|</span> <span>{data.phone}</span> <span>|</span> <span>{data.location}</span>
-                        </div>
-                    </div>
-                    <div style={{ padding: '30px 60px 50px', flex: 1 }}>
-                        <section style={{ marginBottom: '30px' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Executive Summary</h3>
-                            <p style={{ fontSize: '13px', lineHeight: '1.8', color: '#111', textAlign: 'justify' }}>{data.summary}</p>
-                        </section>
-                        <section style={{ marginBottom: '30px' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '20px', letterSpacing: '1px' }}>Public Service History</h3>
-                            {data.experience.map((exp, i) => (
-                                <div key={i} style={{ marginBottom: '20px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-                                        <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#000', margin: 0 }}>{exp.role}</h4>
-                                        <span style={{ fontSize: '12px', color: '#555', fontStyle: 'italic' }}>{exp.dates}</span>
-                                    </div>
-                                    <div style={{ fontSize: '14px', color: templateConfig.primaryColor, fontWeight: '600', marginBottom: '8px' }}>{exp.company}</div>
-                                    <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#222', margin: 0, textAlign: 'justify' }}>{exp.description}</p>
-                                </div>
-                            ))}
-                        </section>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-                            <section>
-                                <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Competencies</h3>
-                                <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '12px', color: '#111', lineHeight: '1.7' }}>
-                                    {data.skills.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
-                                </ul>
-                            </section>
-                            <section>
-                                <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Education</h3>
-                                <p style={{ fontSize: '12px', lineHeight: '1.8', color: '#111', textAlign: 'center', whiteSpace: 'pre-line' }}>{data.education}</p>
-                            </section>
-                        </div>
-                    </div>
-                    {generatedCvNumber && (
-                      <div style={{ position: 'absolute', bottom: '15px', right: '40px', fontSize: '9px', color: '#888', fontFamily: 'monospace', pointerEvents: 'none' }}>
-                        OFFICIAL RECORD: {generatedCvNumber} • SEALED
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] uppercase tracking-tighter"><Award size={20} /> Executive Summary</h3>
+              <textarea rows={4} value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-[#8B0000] outline-none bg-gray-50/50 leading-relaxed font-serif italic" />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <div className="flex justify-between mb-4 items-center font-black text-[#8B0000] uppercase tracking-tighter">
+                <h3 className="flex items-center gap-2"><Briefcase size={20} /> Service Record</h3>
+                <button onClick={addExperience} className="text-[10px] bg-[#8B0000] text-white px-3 py-1.5 rounded shadow-md hover:opacity-80 transition-opacity">Add Mandate</button>
+              </div>
+              {data.experience.map((exp, i) => (
+                <div key={i} className="mb-4 p-5 border-2 rounded-xl bg-gray-50/30 relative group border-gray-100">
+                  <button onClick={() => removeExperience(i)} className="absolute top-2 right-2 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(i, 'role', v, 'experience')} />
+                    <InputGroup label="Agency/Municipality" value={exp.company} onChange={(v) => handleArrayChange(i, 'company', v, 'experience')} />
+                    <InputGroup label="Dates of Service" value={exp.dates} onChange={(v) => handleArrayChange(i, 'dates', v, 'experience')} className="col-span-2" />
+                    <textarea rows={3} value={exp.description} onChange={(e) => handleArrayChange(i, 'description', e.target.value, 'experience')} className="col-span-2 border border-gray-300 rounded p-2 text-sm focus:ring-2 focus:ring-[#8B0000] outline-none" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#8B0000] uppercase tracking-tighter"><Scale size={20} /> Competencies & Pedigree</h3>
+              <InputGroup label="Core Skills (Comma separated)" value={data.skills} onChange={(v) => handleInputChange('skills', v)} />
+              <div className="h-4"></div>
+              <InputGroup label="Education & Credentials" value={data.education} onChange={(v) => handleInputChange('education', v)} />
+            </div>
+          </div>
+
+          {/* PREVIEW */}
+          <div className="h-full bg-slate-300/50 rounded-xl overflow-auto flex justify-center p-8 custom-scrollbar shadow-inner text-slate-900">
+            <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', position: 'relative', fontFamily: '"Georgia", serif' }}>
+              <div style={{ textAlign: 'center', padding: '50px 50px 20px', borderBottom: `3px double ${templateConfig.primaryColor}`, margin: '0 40px' }}>
+                <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#111', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>
+                  {data.firstName} <span style={{ color: templateConfig.primaryColor }}>{data.lastName}</span>
+                </h1>
+                <p style={{ fontSize: '15px', color: '#333', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px' }}>{data.title}</p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '11px', color: '#555', backgroundColor: templateConfig.accentColor, padding: '8px', borderRadius: '2px' }}>
+                  <span>{data.email}</span> <span>|</span> <span>{data.phone}</span> <span>|</span> <span>{data.location}</span>
+                </div>
+              </div>
+              <div style={{ padding: '30px 60px 50px', flex: 1 }}>
+                <section style={{ marginBottom: '30px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Executive Summary</h3>
+                  <p style={{ fontSize: '13px', lineHeight: '1.8', color: '#111', textAlign: 'justify' }}>{data.summary}</p>
+                </section>
+                <section style={{ marginBottom: '30px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '20px', letterSpacing: '1px' }}>Public Service History</h3>
+                  {data.experience.map((exp, i) => (
+                    <div key={i} style={{ marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                        <h4 style={{ fontSize: '15px', fontWeight: 'bold', color: '#000', margin: 0 }}>{exp.role}</h4>
+                        <span style={{ fontSize: '12px', color: '#555', fontStyle: 'italic' }}>{exp.dates}</span>
                       </div>
-                    )}
+                      <div style={{ fontSize: '14px', color: templateConfig.primaryColor, fontWeight: '600', marginBottom: '8px' }}>{exp.company}</div>
+                      <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#222', margin: 0, textAlign: 'justify' }}>{exp.description}</p>
+                    </div>
+                  ))}
+                </section>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                  <section>
+                    <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Competencies</h3>
+                    <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '12px', color: '#111', lineHeight: '1.7' }}>
+                      {data.skills.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
+                    </ul>
+                  </section>
+                  <section>
+                    <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px', letterSpacing: '1px' }}>Education</h3>
+                    <p style={{ fontSize: '12px', lineHeight: '1.8', color: '#111', textAlign: 'center', whiteSpace: 'pre-line' }}>{data.education}</p>
+                  </section>
                 </div>
+              </div>
+              {generatedCvNumber && (
+                <div style={{ position: 'absolute', bottom: '15px', right: '40px', fontSize: '9px', color: '#888', fontFamily: 'monospace', pointerEvents: 'none' }}>
+                  OFFICIAL RECORD: {generatedCvNumber} • SEALED
+                </div>
+              )}
             </div>
+          </div>
         </div>
       </div>
 
@@ -233,9 +233,9 @@ export default function PublicSectorDirectorEliteTemplate({
             <h3 className="text-2xl font-black mb-2 uppercase tracking-tighter text-slate-900">Record Authenticated</h3>
             <p className="text-sm text-gray-600 mb-6 italic underline decoration-[#8B0000]/20 underline-offset-4 tracking-wide">Elite credentials generated. Your leadership profile is now synced with the public service registry.</p>
             <div className="bg-slate-50 border-2 border-dashed border-gray-200 p-6 rounded-2xl mb-6 shadow-inner">
-               <div className="flex justify-center mb-2 text-[#8B0000]"><ShieldCheck size={40}/></div>
-               <p className="text-[10px] text-gray-400 uppercase font-black tracking-[5px] mb-1 font-sans">Official ID</p>
-               <p className="text-3xl font-black text-[#8B0000] font-mono tracking-tighter">{generatedCvNumber}</p>
+              <div className="flex justify-center mb-2 text-[#8B0000]"><ShieldCheck size={40} /></div>
+              <p className="text-[10px] text-gray-400 uppercase font-black tracking-[5px] mb-1 font-sans">Official ID</p>
+              <p className="text-3xl font-black text-[#8B0000] font-mono tracking-tighter">{generatedCvNumber}</p>
             </div>
             <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 rounded-xl text-white font-black uppercase tracking-widest shadow-lg hover:brightness-110 transition-all active:scale-[0.98]" style={{ backgroundColor: templateConfig.primaryColor }}>Return to Command</button>
           </div>

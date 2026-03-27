@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, Download, Plus, Trash2, Loader2, 
+import {
+  ArrowLeft, Download, Plus, Trash2, Loader2,
   Cpu, Terminal, Activity, ShieldCheck, LifeBuoy, Monitor,
   Database, CheckCircle2, Save
 } from 'lucide-react';
@@ -10,11 +10,11 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-widest">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
-      onChange={(e) => onChange(e.target.value)} 
-      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#87CEEB] transition-all font-medium text-slate-700" 
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#87CEEB] transition-all font-medium text-slate-700"
     />
   </div>
 );
@@ -27,11 +27,11 @@ export default function SupportSpecialistModernTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   const templateConfig = {
     name: "Support Specialist Modern",
-    primaryColor: "#87CEEB", 
-    accentColor: "#FFFFFF",  
+    primaryColor: "#87CEEB",
+    accentColor: "#FFFFFF",
     defaultData: {
       firstName: "David",
       lastName: "Kim",
@@ -56,10 +56,10 @@ export default function SupportSpecialistModernTemplate({
   const [generatedCvNumber, setGeneratedCvNumber] = useState(cvNumber || "");
 
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleArrayChange = (index, field, value, arrayName) => {
+    const newArray = [...data[arrayName]];
+    newArray[index][field] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
@@ -108,16 +108,16 @@ export default function SupportSpecialistModernTemplate({
       <div className="w-full bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-20 shadow-sm">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/templates')} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-            <ArrowLeft size={20} className="text-slate-600"/>
+            <ArrowLeft size={20} className="text-slate-600" />
           </button>
           <div className="flex items-center gap-3">
             <div className="bg-[#87CEEB] p-2 rounded-lg">
-              <LifeBuoy size={20} className="text-slate-900"/>
+              <LifeBuoy size={20} className="text-slate-900" />
             </div>
             <h2 className="font-bold text-slate-800 uppercase text-xs tracking-[0.2em]">Support Architect <span className="font-normal text-slate-400 ml-2">v3.0</span></h2>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
@@ -140,7 +140,7 @@ export default function SupportSpecialistModernTemplate({
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
           >
-            <Download className="mr-2" /> PDF
+            <Download className="mr-2" /> Download
           </button>
         </div>
       </div>
@@ -148,114 +148,114 @@ export default function SupportSpecialistModernTemplate({
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full overflow-hidden flex gap-8">
         {/* TECH EDITOR */}
         <div className="w-1/2 overflow-y-auto pr-2 custom-scrollbar space-y-6 pb-24">
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
-                   <Monitor size={16} className="text-[#87CEEB]"/> Station Identity
-                </h3>
-                <div className="grid grid-cols-2 gap-5">
-                    <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                    <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                    <InputGroup label="Technical Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                    <InputGroup label="Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                    <InputGroup label="Phone" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                    <InputGroup label="Base Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+          <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
+              <Monitor size={16} className="text-[#87CEEB]" /> Station Identity
+            </h3>
+            <div className="grid grid-cols-2 gap-5">
+              <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
+              <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
+              <InputGroup label="Technical Title" value={data.title} onChange={(v) => handleInputChange('title', v)} className="col-span-2" />
+              <InputGroup label="Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
+              <InputGroup label="Phone" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
+              <InputGroup label="Base Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="col-span-2" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Core Objective</h3>
+            <textarea rows={4} value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#87CEEB] outline-none text-slate-600 bg-slate-50/50 font-mono shadow-inner" />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Incident History</h3>
+              <button onClick={addExperience} className="text-[10px] font-bold text-sky-500 uppercase tracking-[0.1em] border border-sky-100 px-3 py-1 rounded-md">ADD LOG ENTRY</button>
+            </div>
+            {data.experience.map((exp, i) => (
+              <div key={i} className="mb-6 p-5 border border-slate-100 rounded-xl bg-slate-50/30 relative group transition-all hover:shadow-md">
+                <button onClick={() => removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputGroup label="Role" value={exp.role} onChange={(v) => handleArrayChange(i, 'role', v, 'experience')} />
+                  <InputGroup label="Organization" value={exp.company} onChange={(v) => handleArrayChange(i, 'company', v, 'experience')} />
+                  <InputGroup label="Uptime" value={exp.dates} onChange={(v) => handleArrayChange(i, 'dates', v, 'experience')} className="col-span-2" />
+                  <textarea rows={3} placeholder="Key deliverables, SLA metrics, or hardware managed..." value={exp.description} onChange={(e) => handleArrayChange(i, 'description', e.target.value, 'experience')} className="col-span-2 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:ring-1 focus:ring-sky-200 outline-none" />
                 </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Core Objective</h3>
-                <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#87CEEB] outline-none text-slate-600 bg-slate-50/50 font-mono shadow-inner"/>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
-                 <div className="flex justify-between items-center mb-6 border-b pb-4">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Incident History</h3>
-                    <button onClick={addExperience} className="text-[10px] font-bold text-sky-500 uppercase tracking-[0.1em] border border-sky-100 px-3 py-1 rounded-md">ADD LOG ENTRY</button>
-                 </div>
-                 {data.experience.map((exp, i) => (
-                    <div key={i} className="mb-6 p-5 border border-slate-100 rounded-xl bg-slate-50/30 relative group transition-all hover:shadow-md">
-                        <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputGroup label="Role" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                            <InputGroup label="Organization" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                            <InputGroup label="Uptime" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                            <textarea rows={3} placeholder="Key deliverables, SLA metrics, or hardware managed..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:ring-1 focus:ring-sky-200 outline-none"/>
-                        </div>
-                    </div>
-                 ))}
-            </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="w-1/2 bg-slate-200 flex justify-center overflow-y-auto p-12 custom-scrollbar shadow-inner rounded-3xl">
-            <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-                
-                {/* Tech Sidebar */}
-                <div style={{ width: '35%', backgroundColor: '#0f172a', color: 'white', padding: '50px 30px', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '50px' }}>
-                        <h1 style={{ fontSize: '32px', fontWeight: '900', lineHeight: '1', textTransform: 'uppercase', color: templateConfig.primaryColor }}>{data.firstName}<br/>{data.lastName}</h1>
-                        <p style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '15px', color: '#94a3b8' }}>{data.title}</p>
-                    </div>
+          <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
 
-                    <div style={{ marginBottom: '45px' }}>
-                        <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Communications</h3>
-                        <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '12px', color: '#cbd5e1' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Cpu size={12} className="text-[#87CEEB]"/> {data.phone}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Terminal size={12} className="text-[#87CEEB]"/> {data.email}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Activity size={12} className="text-[#87CEEB]"/> {data.location}</div>
-                        </div>
-                    </div>
+            {/* Tech Sidebar */}
+            <div style={{ width: '35%', backgroundColor: '#0f172a', color: 'white', padding: '50px 30px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ marginBottom: '50px' }}>
+                <h1 style={{ fontSize: '32px', fontWeight: '900', lineHeight: '1', textTransform: 'uppercase', color: templateConfig.primaryColor }}>{data.firstName}<br />{data.lastName}</h1>
+                <p style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '15px', color: '#94a3b8' }}>{data.title}</p>
+              </div>
 
-                    <div style={{ marginBottom: '45px' }}>
-                        <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Tech Stack</h3>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {data.skills.split(',').map((skill, i) => (
-                                <div key={i} style={{ fontSize: '10px', backgroundColor: 'rgba(135,206,235,0.1)', color: '#87CEEB', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold', border: '1px solid rgba(135,206,235,0.2)' }}>{skill.trim()}</div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Credentials</h3>
-                        <p style={{ fontSize: '11px', lineHeight: '1.7', whiteSpace: 'pre-line', color: '#cbd5e1' }}>{data.education}</p>
-                    </div>
+              <div style={{ marginBottom: '45px' }}>
+                <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Communications</h3>
+                <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '12px', color: '#cbd5e1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Cpu size={12} className="text-[#87CEEB]" /> {data.phone}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Terminal size={12} className="text-[#87CEEB]" /> {data.email}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Activity size={12} className="text-[#87CEEB]" /> {data.location}</div>
                 </div>
+              </div>
 
-                {/* Main Content Area */}
-                <div style={{ width: '65%', padding: '50px 50px', backgroundColor: 'white' }}>
-                    <section style={{ marginBottom: '45px' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                           <ShieldCheck size={18} className="text-[#87CEEB]"/> Executive Profile
-                        </h3>
-                        <p style={{ fontSize: '13px', lineHeight: '1.8', color: '#475569', fontStyle: 'italic' }}>"{data.summary}"</p>
-                    </section>
-
-                    <section>
-                        <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                           <Activity size={18} className="text-[#87CEEB]"/> Professional Uptime
-                        </h3>
-                        {data.experience.map((exp, i) => (
-                            <div key={i} style={{ marginBottom: '35px', position: 'relative', paddingLeft: '20px', borderLeft: '2px solid #f1f5f9' }}>
-                                <div style={{ position: 'absolute', left: '-2px', top: '0', width: '2px', height: '15px', backgroundColor: templateConfig.primaryColor }}></div>
-                                <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{exp.role}</h4>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                    <span style={{ fontSize: '12px', color: '#0ea5e9', fontWeight: '800', textTransform: 'uppercase' }}>{exp.company}</span>
-                                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>{exp.dates}</span>
-                                </div>
-                                <p style={{ fontSize: '12.5px', lineHeight: '1.7', color: '#475569', margin: 0 }}>{exp.description}</p>
-                            </div>
-                        ))}
-                    </section>
+              <div style={{ marginBottom: '45px' }}>
+                <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Tech Stack</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {data.skills.split(',').map((skill, i) => (
+                    <div key={i} style={{ fontSize: '10px', backgroundColor: 'rgba(135,206,235,0.1)', color: '#87CEEB', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold', border: '1px solid rgba(135,206,235,0.2)' }}>{skill.trim()}</div>
+                  ))}
                 </div>
+              </div>
 
-                {/* TECH FOOTER */}
-                {generatedCvNumber && (
-                  <div style={{ position: 'absolute', bottom: '25px', left: '0', right: '0', textAlign: 'center', opacity: 0.3 }}>
-                    <div style={{ fontSize: '8px', color: '#475569', fontFamily: 'monospace' }}>
-                      SYS_VERIFY_ID: {generatedCvNumber} | INTEGRITY_CHECK: PASSED
-                    </div>
-                  </div>
-                )}
+              <div>
+                <h3 style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', color: '#475569', marginBottom: '20px', letterSpacing: '1px' }}>Credentials</h3>
+                <p style={{ fontSize: '11px', lineHeight: '1.7', whiteSpace: 'pre-line', color: '#cbd5e1' }}>{data.education}</p>
+              </div>
             </div>
+
+            {/* Main Content Area */}
+            <div style={{ width: '65%', padding: '50px 50px', backgroundColor: 'white' }}>
+              <section style={{ marginBottom: '45px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <ShieldCheck size={18} className="text-[#87CEEB]" /> Executive Profile
+                </h3>
+                <p style={{ fontSize: '13px', lineHeight: '1.8', color: '#475569', fontStyle: 'italic' }}>"{data.summary}"</p>
+              </section>
+
+              <section>
+                <h3 style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Activity size={18} className="text-[#87CEEB]" /> Professional Uptime
+                </h3>
+                {data.experience.map((exp, i) => (
+                  <div key={i} style={{ marginBottom: '35px', position: 'relative', paddingLeft: '20px', borderLeft: '2px solid #f1f5f9' }}>
+                    <div style={{ position: 'absolute', left: '-2px', top: '0', width: '2px', height: '15px', backgroundColor: templateConfig.primaryColor }}></div>
+                    <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{exp.role}</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '12px', color: '#0ea5e9', fontWeight: '800', textTransform: 'uppercase' }}>{exp.company}</span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>{exp.dates}</span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', lineHeight: '1.7', color: '#475569', margin: 0 }}>{exp.description}</p>
+                  </div>
+                ))}
+              </section>
+            </div>
+
+            {/* TECH FOOTER */}
+            {generatedCvNumber && (
+              <div style={{ position: 'absolute', bottom: '25px', left: '0', right: '0', textAlign: 'center', opacity: 0.3 }}>
+                <div style={{ fontSize: '8px', color: '#475569', fontFamily: 'monospace' }}>
+                  SYS_VERIFY_ID: {generatedCvNumber} | INTEGRITY_CHECK: PASSED
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -266,7 +266,7 @@ export default function SupportSpecialistModernTemplate({
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
           <div className="bg-white rounded-[2rem] p-10 max-w-sm w-full text-center shadow-2xl border border-slate-100">
             <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <CheckCircle2 size={40}/>
+              <CheckCircle2 size={40} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">System Updated</h3>
             <p className="text-slate-500 text-sm mb-8 px-4">Technical profile archived successfully with ID signature.</p>

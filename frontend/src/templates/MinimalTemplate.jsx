@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -32,7 +32,7 @@ export default function MinimalTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION: COLORS & DEFAULTS ---
   const templateConfig = {
     name: "Technology & IT",
@@ -126,15 +126,15 @@ export default function MinimalTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- Header / Toolbar --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
           <div className="flex justify-between items-center">
-            
+
             {/* Left: Back & Title */}
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate('/templates')}
                 className="inline-flex items-center justify-center text-sm font-medium transition-colors hover:bg-gray-100 text-gray-600 h-9 px-3 rounded-md"
               >
@@ -142,7 +142,7 @@ export default function MinimalTemplate({
               </button>
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
               <div className="flex items-center gap-2">
-                <div 
+                <div
                   className="p-1.5 rounded-lg shadow-sm"
                   style={{ backgroundColor: templateConfig.primaryColor }}
                 >
@@ -167,7 +167,7 @@ export default function MinimalTemplate({
                   <Save className="w-4 h-4 mr-2" />
                 )}
 
-                {generatedCvNumber || cvNumber ? "Update_Sync" : "Save_Draft"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -180,7 +180,7 @@ export default function MinimalTemplate({
                   backgroundColor: generatedCvNumber ? templateConfig.accentColor : undefined
                 }}
               >
-                <Download className="w-4 h-4 mr-2" /> Download PDF
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
 
@@ -191,11 +191,11 @@ export default function MinimalTemplate({
       {/* --- Main Content Area --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- LEFT: Editor Panel --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               {/* Personal Info Card */}
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
@@ -218,7 +218,7 @@ export default function MinimalTemplate({
                   <FileText className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Professional Summary</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={4}
                   value={data.summary}
                   onChange={(e) => handleInputChange('summary', e.target.value)}
@@ -234,19 +234,19 @@ export default function MinimalTemplate({
                     <Briefcase className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                     <h3>Experience</h3>
                   </div>
-                  <button 
-                    onClick={addExperience} 
+                  <button
+                    onClick={addExperience}
                     className="text-sm px-2 py-1 rounded flex items-center gap-1 hover:opacity-80 transition-opacity"
                     style={{ color: templateConfig.primaryColor, backgroundColor: `${templateConfig.primaryColor}15` }}
                   >
                     <Plus className="w-3 h-3" /> Add
                   </button>
                 </div>
-                
+
                 <div className="space-y-6">
                   {data.experience.map((exp, index) => (
                     <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-100 relative group">
-                      <button 
+                      <button
                         onClick={() => removeExperience(index)}
                         className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -258,7 +258,7 @@ export default function MinimalTemplate({
                         <InputGroup label="Dates" value={exp.dates} onChange={(v) => handleArrayChange(index, 'dates', v, 'experience')} className="md:col-span-2" />
                         <div className="md:col-span-2">
                           <label className="text-xs font-medium text-gray-500 mb-1 block">Description</label>
-                          <textarea 
+                          <textarea
                             rows={3}
                             value={exp.description}
                             onChange={(e) => handleArrayChange(index, 'description', e.target.value, 'experience')}
@@ -273,11 +273,11 @@ export default function MinimalTemplate({
 
               {/* Skills Card */}
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={3}
                   value={data.skills}
                   onChange={(e) => handleInputChange('skills', e.target.value)}
@@ -286,13 +286,13 @@ export default function MinimalTemplate({
                 />
               </div>
 
-               {/* Education Card */}
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              {/* Education Card */}
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={3}
                   value={data.education}
                   onChange={(e) => handleInputChange('education', e.target.value)}
@@ -306,9 +306,9 @@ export default function MinimalTemplate({
           {/* --- RIGHT: Preview Panel --- */}
           <div className="h-full overflow-hidden flex flex-col">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-full flex flex-col">
-              
+
               {/* Preview Toolbar */}
-              <div 
+              <div
                 className="px-6 py-4 flex items-center justify-between shrink-0"
                 style={{ background: `linear-gradient(to right, ${templateConfig.primaryColor}, ${templateConfig.accentColor})` }}
               >
@@ -321,23 +321,23 @@ export default function MinimalTemplate({
                   <span className="text-sm font-medium text-white/90">Live Preview</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                   <div className="flex items-center gap-2 bg-white/10 rounded-lg px-2 py-1">
-                      <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="text-white hover:text-blue-200">-</button>
-                      <span className="text-xs text-white font-mono w-8 text-center">{Math.round(zoom * 100)}%</span>
-                      <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="text-white hover:text-blue-200">+</button>
-                   </div>
+                  <div className="flex items-center gap-2 bg-white/10 rounded-lg px-2 py-1">
+                    <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="text-white hover:text-blue-200">-</button>
+                    <span className="text-xs text-white font-mono w-8 text-center">{Math.round(zoom * 100)}%</span>
+                    <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="text-white hover:text-blue-200">+</button>
+                  </div>
                 </div>
               </div>
 
               {/* Preview Content Area */}
               <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-                <div 
+                <div
                   className="shadow-2xl transition-transform duration-200 bg-white"
                   style={{
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top center',
-                    width: '210mm', 
-                    minHeight: '297mm', 
+                    width: '210mm',
+                    minHeight: '297mm',
                   }}
                 >
                   <div id="resume-preview" ref={previewRef} className="h-full w-full p-10 bg-white font-sans text-slate-800">
@@ -409,7 +409,7 @@ export default function MinimalTemplate({
               <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
                 <span>Scroll to see more</span>
                 <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                  <Eye className="w-3 h-3"/>
+                  <Eye className="w-3 h-3" />
                   Preview Mode
                 </div>
               </div>
@@ -450,9 +450,9 @@ export default function MinimalTemplate({
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
     />

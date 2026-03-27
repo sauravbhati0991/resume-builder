@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -25,9 +25,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-shadow"
     />
@@ -42,7 +42,7 @@ export default function GeneralTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "General Purpose",
@@ -73,7 +73,7 @@ export default function GeneralTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -130,7 +130,7 @@ export default function GeneralTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -159,7 +159,7 @@ export default function GeneralTemplate({
                   <Save className="w-4 h-4 mr-2" />
                 )}
 
-                {generatedCvNumber || cvNumber ? "Update_Sync" : "Save_Draft"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -172,7 +172,7 @@ export default function GeneralTemplate({
                   backgroundColor: generatedCvNumber ? "#111827" : undefined
                 }}
               >
-                <Download className="w-4 h-4 mr-2" /> Download PDF
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
           </div>
@@ -182,11 +182,11 @@ export default function GeneralTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -241,15 +241,15 @@ export default function GeneralTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -270,43 +270,43 @@ export default function GeneralTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div id="resume-preview" ref={previewRef} className="h-full w-full bg-white">
-                  
+
                   {/* --- PDF CONTENT (GENERAL UNIVERSAL LAYOUT) --- */}
-                  <div style={{ 
-                    height: '100%', 
-                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', 
+                  <div style={{
+                    height: '100%',
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
                     color: '#333',
                     display: 'grid',
                     gridTemplateColumns: '30% 65%',
                     gap: '5%'
                   }}>
-                    
+
                     {/* Sidebar Column */}
-                    <div style={{ 
-                      backgroundColor: '#f8fafc', 
-                      padding: '2.5rem 1.5rem', 
+                    <div style={{
+                      backgroundColor: '#f8fafc',
+                      padding: '2.5rem 1.5rem',
                       borderRight: '1px solid #e2e8f0',
-                      height: '100%' 
+                      height: '100%'
                     }}>
                       {/* Avatar / Initials Placeholder */}
-                      <div style={{ 
-                        width: '80px', 
-                        height: '80px', 
-                        backgroundColor: templateConfig.primaryColor, 
-                        color: 'white', 
-                        borderRadius: '50%', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        backgroundColor: templateConfig.primaryColor,
+                        color: 'white',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '2rem',
                         fontWeight: 'bold',
@@ -321,9 +321,9 @@ export default function GeneralTemplate({
                           Contact
                         </h3>
                         <div style={{ fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#475569' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={12}/> {data.email}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone size={12}/> {data.phone}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><MapPin size={12}/> {data.location}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={12} /> {data.email}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone size={12} /> {data.phone}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><MapPin size={12} /> {data.location}</div>
                         </div>
                       </div>
 
@@ -342,11 +342,11 @@ export default function GeneralTemplate({
                         </h3>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                           {data.skills.split(',').map((skill, i) => (
-                            <span key={i} style={{ 
-                              fontSize: '0.7rem', 
-                              backgroundColor: 'white', 
+                            <span key={i} style={{
+                              fontSize: '0.7rem',
+                              backgroundColor: 'white',
                               border: '1px solid #cbd5e1',
-                              padding: '0.2rem 0.5rem', 
+                              padding: '0.2rem 0.5rem',
                               borderRadius: '4px',
                               color: '#475569',
                               fontWeight: '500'
@@ -360,11 +360,11 @@ export default function GeneralTemplate({
 
                     {/* Main Content Column */}
                     <div style={{ padding: '2.5rem 0' }}>
-                      
+
                       {/* Name & Title */}
                       <header style={{ marginBottom: '2.5rem', borderBottom: `2px solid ${templateConfig.primaryColor}`, paddingBottom: '1.5rem' }}>
                         <h1 style={{ fontSize: '2.75rem', fontWeight: '800', lineHeight: '1', color: '#1e293b', marginBottom: '0.5rem' }}>
-                          {data.firstName} <br/> {data.lastName}
+                          {data.firstName} <br /> {data.lastName}
                         </h1>
                         <p style={{ fontSize: '1.25rem', color: templateConfig.accentColor, fontWeight: '500' }}>{data.title}</p>
                       </header>
@@ -382,7 +382,7 @@ export default function GeneralTemplate({
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '1.5rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ width: '6px', height: '6px', backgroundColor: templateConfig.primaryColor, borderRadius: '50%' }}></span> Experience
                         </h3>
-                        
+
                         {data.experience.map((exp, i) => (
                           <div key={i} style={{ marginBottom: '2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
@@ -403,7 +403,7 @@ export default function GeneralTemplate({
 
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -411,7 +411,7 @@ export default function GeneralTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 

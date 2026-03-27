@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -25,9 +25,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-800 transition-shadow"
     />
@@ -42,7 +42,7 @@ export default function PublicSectorTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Public Sector & Nonprofit",
@@ -72,7 +72,7 @@ export default function PublicSectorTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -129,7 +129,7 @@ export default function PublicSectorTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -147,29 +147,29 @@ export default function PublicSectorTemplate({
               </div>
             </div>
             <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {generatedCvNumber || cvNumber ? "Update_Registry" : "Sync_Initial_Audit"}
-                </button>
-                <button
-                  onClick={() => handlePdfDownload(generatedCvNumber)}
-                  disabled={!generatedCvNumber}
-                  className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-all active:scale-95 ${generatedCvNumber
-                    ? "bg-slate-800 hover:bg-slate-900"
-                    : "bg-gray-300 cursor-not-allowed opacity-50"
-                    }`}
-                  style={generatedCvNumber ? { backgroundColor: templateConfig.primaryColor } : {}}
-                >
-                  <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
-                </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="inline-flex items-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
+              </button>
+              <button
+                onClick={() => handlePdfDownload(generatedCvNumber)}
+                disabled={!generatedCvNumber}
+                className={`inline-flex items-center text-sm font-medium h-9 px-4 rounded-md text-white shadow-md transition-all active:scale-95 ${generatedCvNumber
+                  ? "bg-slate-800 hover:bg-slate-900"
+                  : "bg-gray-300 cursor-not-allowed opacity-50"
+                  }`}
+                style={generatedCvNumber ? { backgroundColor: templateConfig.primaryColor } : {}}
+              >
+                <Download className="w-4 h-4 mr-2" /> Download
+              </button>
             </div>
           </div>
         </div>
@@ -178,11 +178,11 @@ export default function PublicSectorTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -237,15 +237,15 @@ export default function PublicSectorTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Megaphone className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Core Competencies</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-800" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -266,20 +266,20 @@ export default function PublicSectorTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div id="resume-preview" ref={previewRef} className="h-full w-full bg-white text-slate-900">
-                  
+
                   {/* --- PDF CONTENT (FEDERAL LAYOUT) --- */}
                   <div style={{ height: '100%', padding: '4rem', fontFamily: 'Georgia, serif', color: '#111827' }}>
-                    
+
                     {/* Header */}
                     <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
                       <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.5rem', color: '#111827', letterSpacing: '0.05em' }}>
@@ -299,11 +299,11 @@ export default function PublicSectorTemplate({
 
                     {/* Summary */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <div style={{ 
-                        backgroundColor: '#f3f4f6', 
-                        padding: '0.5rem 1rem', 
-                        borderLeft: `5px solid ${templateConfig.primaryColor}`, 
-                        marginBottom: '1rem' 
+                      <div style={{
+                        backgroundColor: '#f3f4f6',
+                        padding: '0.5rem 1rem',
+                        borderLeft: `5px solid ${templateConfig.primaryColor}`,
+                        marginBottom: '1rem'
                       }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', margin: 0, color: '#1f2937' }}>
                           Professional Profile
@@ -316,17 +316,17 @@ export default function PublicSectorTemplate({
 
                     {/* Experience */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <div style={{ 
-                        backgroundColor: '#f3f4f6', 
-                        padding: '0.5rem 1rem', 
-                        borderLeft: `5px solid ${templateConfig.primaryColor}`, 
-                        marginBottom: '1.5rem' 
+                      <div style={{
+                        backgroundColor: '#f3f4f6',
+                        padding: '0.5rem 1rem',
+                        borderLeft: `5px solid ${templateConfig.primaryColor}`,
+                        marginBottom: '1.5rem'
                       }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', margin: 0, color: '#1f2937' }}>
                           Professional Experience
                         </h3>
                       </div>
-                      
+
                       {data.experience.map((exp, i) => (
                         <div key={i} style={{ marginBottom: '2rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
@@ -345,11 +345,11 @@ export default function PublicSectorTemplate({
 
                     {/* Education */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <div style={{ 
-                        backgroundColor: '#f3f4f6', 
-                        padding: '0.5rem 1rem', 
-                        borderLeft: `5px solid ${templateConfig.primaryColor}`, 
-                        marginBottom: '1rem' 
+                      <div style={{
+                        backgroundColor: '#f3f4f6',
+                        padding: '0.5rem 1rem',
+                        borderLeft: `5px solid ${templateConfig.primaryColor}`,
+                        marginBottom: '1rem'
                       }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', margin: 0, color: '#1f2937' }}>
                           Education
@@ -362,11 +362,11 @@ export default function PublicSectorTemplate({
 
                     {/* Skills */}
                     <section>
-                      <div style={{ 
-                        backgroundColor: '#f3f4f6', 
-                        padding: '0.5rem 1rem', 
-                        borderLeft: `5px solid ${templateConfig.primaryColor}`, 
-                        marginBottom: '1rem' 
+                      <div style={{
+                        backgroundColor: '#f3f4f6',
+                        padding: '0.5rem 1rem',
+                        borderLeft: `5px solid ${templateConfig.primaryColor}`,
+                        marginBottom: '1rem'
                       }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', margin: 0, color: '#1f2937' }}>
                           Competencies
@@ -379,7 +379,7 @@ export default function PublicSectorTemplate({
 
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -387,7 +387,7 @@ export default function PublicSectorTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 
@@ -401,8 +401,8 @@ export default function PublicSectorTemplate({
             <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Impact Recorded</h3>
             <p className="text-sm text-gray-600 mb-4 font-medium italic underline decoration-[#8B0000]/20 underline-offset-4 tracking-wide">Document successfully archived and downloaded.</p>
             <div className="bg-slate-50 border-2 border-dashed border-gray-200 p-5 rounded-2xl mb-6 shadow-inner">
-               <p className="text-[10px] text-gray-400 uppercase font-black tracking-[4px] mb-1 font-sans">System Verification ID</p>
-               <p className="text-2xl font-black text-[#8B0000] font-mono">{generatedCvNumber}</p>
+              <p className="text-[10px] text-gray-400 uppercase font-black tracking-[4px] mb-1 font-sans">System Verification ID</p>
+              <p className="text-2xl font-black text-[#8B0000] font-mono">{generatedCvNumber}</p>
             </div>
             <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 rounded-xl text-white font-black uppercase tracking-widest shadow-lg hover:brightness-110 transition-all active:scale-[0.98]" style={{ backgroundColor: templateConfig.primaryColor }}>Dismiss</button>
           </div>

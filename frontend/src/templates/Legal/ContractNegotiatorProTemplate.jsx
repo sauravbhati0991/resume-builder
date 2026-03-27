@@ -1,19 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, Download, Plus, Trash2, Loader2, Save,  Mail, Phone, MapPin, Scale, Briefcase, FileCheck, Award,
+import {
+  ArrowLeft, Download, Plus, Trash2, Loader2, Save, Mail, Phone, MapPin, Scale, Briefcase, FileCheck, Award,
   Database, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-[10px] font-bold text-slate-500 mb-1 block uppercase tracking-widest">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
-      onChange={(e) => onChange(e.target.value)} 
-      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#00008B] transition-all shadow-sm font-medium text-slate-700" 
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#00008B] transition-all shadow-sm font-medium text-slate-700"
     />
   </div>
 );
@@ -26,11 +26,11 @@ export default function ContractNegotiatorProTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   const templateConfig = {
     name: "Contract Negotiator Pro",
-    primaryColor: "#00008B", 
-    accentColor: "#F5F5DC",  
+    primaryColor: "#00008B",
+    accentColor: "#F5F5DC",
     defaultData: {
       firstName: "Michael",
       lastName: "Ross",
@@ -55,10 +55,10 @@ export default function ContractNegotiatorProTemplate({
   const [data, setData] = useState(initialData || templateConfig.defaultData);
 
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  const handleArrayChange = (index, field, value, arrayName) => { 
-    const newArray = [...data[arrayName]]; 
-    newArray[index][field] = value; 
-    setData(prev => ({ ...prev, [arrayName]: newArray })); 
+  const handleArrayChange = (index, field, value, arrayName) => {
+    const newArray = [...data[arrayName]];
+    newArray[index][field] = value;
+    setData(prev => ({ ...prev, [arrayName]: newArray }));
   };
   const addExperience = () => setData(prev => ({ ...prev, experience: [...prev.experience, { role: "", company: "", dates: "", description: "" }] }));
   const removeExperience = (index) => setData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
@@ -107,16 +107,16 @@ export default function ContractNegotiatorProTemplate({
       <div className="w-full bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-20 shadow-sm">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/templates')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft size={20} className="text-slate-600"/>
+            <ArrowLeft size={20} className="text-slate-600" />
           </button>
           <div className="flex items-center gap-3">
             <div className="bg-[#00008B] p-2 rounded shadow-md">
-              <Scale size={20} className="text-[#F5F5DC]"/>
+              <Scale size={20} className="text-[#F5F5DC]" />
             </div>
             <h2 className="font-bold text-slate-900 tracking-tight uppercase text-xs tracking-[0.2em]">{templateConfig.name} <span className="text-slate-400 font-medium ml-1">v4.0</span></h2>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
@@ -128,7 +128,7 @@ export default function ContractNegotiatorProTemplate({
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            {generatedCvNumber || cvNumber ? "Update_Registry" : "Save_Draft"}
+            {generatedCvNumber || cvNumber ? "Update" : "Save"}
           </button>
           <button
             onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -138,7 +138,7 @@ export default function ContractNegotiatorProTemplate({
               : "bg-slate-300 text-slate-500 cursor-not-allowed opacity-50"
               }`}
           >
-            <Download className="w-3.5 h-3.5" /> PDF_EXPORT
+            <Download className="w-3.5 h-3.5" /> Download
           </button>
         </div>
       </div>
@@ -146,106 +146,106 @@ export default function ContractNegotiatorProTemplate({
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full overflow-hidden flex gap-8">
         {/* CONTRACT EDITOR */}
         <div className="w-1/2 overflow-y-auto pr-2 custom-scrollbar space-y-6 pb-24">
-            <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
-                   <Briefcase size={16} className="text-blue-900"/> Professional Profile
-                </h3>
-                <div className="grid grid-cols-2 gap-5">
-                    <InputGroup label="First Name" value={data.firstName} onChange={(v)=>handleInputChange('firstName', v)}/>
-                    <InputGroup label="Last Name" value={data.lastName} onChange={(v)=>handleInputChange('lastName', v)}/>
-                    <InputGroup label="Professional Title" value={data.title} onChange={(v)=>handleInputChange('title', v)} className="col-span-2"/>
-                    <InputGroup label="Business Email" value={data.email} onChange={(v)=>handleInputChange('email', v)}/>
-                    <InputGroup label="Contact Number" value={data.phone} onChange={(v)=>handleInputChange('phone', v)}/>
-                    <InputGroup label="Office Location" value={data.location} onChange={(v)=>handleInputChange('location', v)} className="col-span-2"/>
+          <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2 border-b pb-4">
+              <Briefcase size={16} className="text-blue-900" /> Professional Profile
+            </h3>
+            <div className="grid grid-cols-2 gap-5">
+              <InputGroup label="First Name" value={data.firstName} onChange={(v) => handleInputChange('firstName', v)} />
+              <InputGroup label="Last Name" value={data.lastName} onChange={(v) => handleInputChange('lastName', v)} />
+              <InputGroup label="Professional Title" value={data.title} onChange={(v) => handleInputChange('title', v)} className="col-span-2" />
+              <InputGroup label="Business Email" value={data.email} onChange={(v) => handleInputChange('email', v)} />
+              <InputGroup label="Contact Number" value={data.phone} onChange={(v) => handleInputChange('phone', v)} />
+              <InputGroup label="Office Location" value={data.location} onChange={(v) => handleInputChange('location', v)} className="col-span-2" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Executive Summary</h3>
+            <textarea rows={4} value={data.summary} onChange={(e) => handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-md p-3 text-sm focus:ring-1 focus:ring-[#00008B] outline-none text-slate-600 bg-slate-50/30 font-serif italic shadow-inner" />
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Deal Experience</h3>
+              <button onClick={addExperience} className="text-[10px] font-bold text-blue-800 hover:underline tracking-widest uppercase">+ ADD CLAUSE</button>
+            </div>
+            {data.experience.map((exp, i) => (
+              <div key={i} className="mb-6 p-5 border border-slate-100 rounded bg-slate-50/50 relative group transition-all hover:shadow-md">
+                <button onClick={() => removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16} /></button>
+                <div className="grid grid-cols-2 gap-4">
+                  <InputGroup label="Position" value={exp.role} onChange={(v) => handleArrayChange(i, 'role', v, 'experience')} />
+                  <InputGroup label="Firm/Corp" value={exp.company} onChange={(v) => handleArrayChange(i, 'company', v, 'experience')} />
+                  <InputGroup label="Term" value={exp.dates} onChange={(v) => handleArrayChange(i, 'dates', v, 'experience')} className="col-span-2" />
+                  <textarea rows={3} placeholder="Key deal terms, negotiation wins, or contract types..." value={exp.description} onChange={(e) => handleArrayChange(i, 'description', e.target.value, 'experience')} className="col-span-2 border border-slate-200 rounded p-3 text-sm text-slate-600 focus:ring-1 focus:ring-blue-100 outline-none" />
                 </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Executive Summary</h3>
-                <textarea rows={4} value={data.summary} onChange={(e)=>handleInputChange('summary', e.target.value)} className="w-full border border-slate-200 rounded-md p-3 text-sm focus:ring-1 focus:ring-[#00008B] outline-none text-slate-600 bg-slate-50/30 font-serif italic shadow-inner"/>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
-                 <div className="flex justify-between items-center mb-6 border-b pb-4">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Deal Experience</h3>
-                    <button onClick={addExperience} className="text-[10px] font-bold text-blue-800 hover:underline tracking-widest uppercase">+ ADD CLAUSE</button>
-                 </div>
-                 {data.experience.map((exp, i) => (
-                    <div key={i} className="mb-6 p-5 border border-slate-100 rounded bg-slate-50/50 relative group transition-all hover:shadow-md">
-                        <button onClick={()=>removeExperience(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputGroup label="Position" value={exp.role} onChange={(v)=>handleArrayChange(i,'role',v,'experience')}/>
-                            <InputGroup label="Firm/Corp" value={exp.company} onChange={(v)=>handleArrayChange(i,'company',v,'experience')}/>
-                            <InputGroup label="Term" value={exp.dates} onChange={(v)=>handleArrayChange(i,'dates',v,'experience')} className="col-span-2"/>
-                            <textarea rows={3} placeholder="Key deal terms, negotiation wins, or contract types..." value={exp.description} onChange={(e)=>handleArrayChange(i,'description',e.target.value,'experience')} className="col-span-2 border border-slate-200 rounded p-3 text-sm text-slate-600 focus:ring-1 focus:ring-blue-100 outline-none"/>
-                        </div>
-                    </div>
-                 ))}
-            </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* PREVIEW */}
         <div className="w-1/2 bg-slate-300 flex justify-center overflow-y-auto p-12 custom-scrollbar rounded-3xl shadow-inner text-slate-800">
-            <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 30px 60px rgba(0,0,0,0.2)', fontFamily: '"Times New Roman", Times, serif' }}>
-                
-                {/* Header Block */}
-                <div style={{ backgroundColor: templateConfig.primaryColor, color: 'white', padding: '50px 60px', borderBottom: `8px solid ${templateConfig.accentColor}` }}>
-                    <h1 style={{ fontSize: '42px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 5px 0' }}>{data.firstName} {data.lastName}</h1>
-                    <h2 style={{ fontSize: '18px', color: templateConfig.accentColor, fontWeight: 'normal', letterSpacing: '2px', margin: 0, opacity: 0.9 }}>{data.title}</h2>
-                    
-                    <div style={{ display: 'flex', gap: '25px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={12} color={templateConfig.accentColor}/> {data.email}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={12} color={templateConfig.accentColor}/> {data.phone}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><MapPin size={12} color={templateConfig.accentColor}/> {data.location}</span>
-                    </div>
-                </div>
+          <div id="resume-preview" ref={previewRef} style={{ width: '210mm', minHeight: '297mm', backgroundColor: 'white', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 30px 60px rgba(0,0,0,0.2)', fontFamily: '"Times New Roman", Times, serif' }}>
 
-                <div style={{ padding: '40px 60px', flex: 1 }}>
-                    <section style={{ marginBottom: '35px' }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Award size={16}/> Professional Statement
-                        </h3>
-                        <p style={{ fontSize: '13.5px', lineHeight: '1.7', color: '#111', textAlign: 'justify' }}>{data.summary}</p>
-                    </section>
+            {/* Header Block */}
+            <div style={{ backgroundColor: templateConfig.primaryColor, color: 'white', padding: '50px 60px', borderBottom: `8px solid ${templateConfig.accentColor}` }}>
+              <h1 style={{ fontSize: '42px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 5px 0' }}>{data.firstName} {data.lastName}</h1>
+              <h2 style={{ fontSize: '18px', color: templateConfig.accentColor, fontWeight: 'normal', letterSpacing: '2px', margin: 0, opacity: 0.9 }}>{data.title}</h2>
 
-                    <section style={{ marginBottom: '35px' }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <FileCheck size={16}/> Transactional History
-                        </h3>
-                        {data.experience.map((exp, i) => (
-                            <div key={i} style={{ marginBottom: '25px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-                                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#000', margin: 0 }}>{exp.role}</h4>
-                                    <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#666', fontWeight: 'bold' }}>{exp.dates}</span>
-                                </div>
-                                <div style={{ fontSize: '14px', color: templateConfig.primaryColor, fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{exp.company}</div>
-                                <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#222', margin: 0 }}>{exp.description}</p>
-                            </div>
-                        ))}
-                    </section>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '50px' }}>
-                        <section>
-                            <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px' }}>Specialized Skills</h3>
-                            <ul style={{ paddingLeft: '15px', margin: 0, fontSize: '13px', color: '#111', lineHeight: '1.8' }}>
-                                {data.skills.split(',').map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s.trim()}</li>)}
-                            </ul>
-                        </section>
-                        <section>
-                            <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px' }}>Academic Background</h3>
-                            <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#111', whiteSpace: 'pre-line', fontWeight: 'bold' }}>{data.education}</p>
-                        </section>
-                    </div>
-                </div>
-
-                {/* AUTHENTICITY FOOTER */}
-                {generatedCvNumber && (
-                  <div style={{ position: 'absolute', bottom: '20px', right: '40px', fontSize: '9px', color: '#aaa', fontFamily: 'monospace', textAlign: 'right' }}>
-                    AUDIT_REF: {generatedCvNumber}<br/>
-                    <span style={{ fontSize: '8px' }}>Certified Transactional Record</span>
-                  </div>
-                )}
+              <div style={{ display: 'flex', gap: '25px', marginTop: '30px', fontSize: '11px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={12} color={templateConfig.accentColor} /> {data.email}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Phone size={12} color={templateConfig.accentColor} /> {data.phone}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><MapPin size={12} color={templateConfig.accentColor} /> {data.location}</span>
+              </div>
             </div>
+
+            <div style={{ padding: '40px 60px', flex: 1 }}>
+              <section style={{ marginBottom: '35px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Award size={16} /> Professional Statement
+                </h3>
+                <p style={{ fontSize: '13.5px', lineHeight: '1.7', color: '#111', textAlign: 'justify' }}>{data.summary}</p>
+              </section>
+
+              <section style={{ marginBottom: '35px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <FileCheck size={16} /> Transactional History
+                </h3>
+                {data.experience.map((exp, i) => (
+                  <div key={i} style={{ marginBottom: '25px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#000', margin: 0 }}>{exp.role}</h4>
+                      <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#666', fontWeight: 'bold' }}>{exp.dates}</span>
+                    </div>
+                    <div style={{ fontSize: '14px', color: templateConfig.primaryColor, fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{exp.company}</div>
+                    <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#222', margin: 0 }}>{exp.description}</p>
+                  </div>
+                ))}
+              </section>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '50px' }}>
+                <section>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px' }}>Specialized Skills</h3>
+                  <ul style={{ paddingLeft: '15px', margin: 0, fontSize: '13px', color: '#111', lineHeight: '1.8' }}>
+                    {data.skills.split(',').map((s, i) => <li key={i} style={{ marginBottom: '4px' }}>{s.trim()}</li>)}
+                  </ul>
+                </section>
+                <section>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: templateConfig.primaryColor, textTransform: 'uppercase', borderBottom: `1.5px solid #eee`, paddingBottom: '6px', marginBottom: '15px' }}>Academic Background</h3>
+                  <p style={{ fontSize: '13px', lineHeight: '1.7', color: '#111', whiteSpace: 'pre-line', fontWeight: 'bold' }}>{data.education}</p>
+                </section>
+              </div>
+            </div>
+
+            {/* AUTHENTICITY FOOTER */}
+            {generatedCvNumber && (
+              <div style={{ position: 'absolute', bottom: '20px', right: '40px', fontSize: '9px', color: '#aaa', fontFamily: 'monospace', textAlign: 'right' }}>
+                AUDIT_REF: {generatedCvNumber}<br />
+                <span style={{ fontSize: '8px' }}>Certified Transactional Record</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -254,7 +254,7 @@ export default function ContractNegotiatorProTemplate({
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 text-center">
           <div className="bg-white rounded-2xl p-10 max-w-sm w-full shadow-2xl border-t-8 border-indigo-900">
             <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={40}/>
+              <CheckCircle2 size={40} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">Archive Finalized</h3>
             <p className="text-slate-500 text-sm mb-8 px-4">Your professional record has been synchronized and the transaction ID generated.</p>

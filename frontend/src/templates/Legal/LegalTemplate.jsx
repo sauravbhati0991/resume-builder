@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -25,9 +25,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition-shadow"
     />
@@ -42,7 +42,7 @@ export default function LegalTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Legal",
@@ -72,7 +72,7 @@ export default function LegalTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -129,7 +129,7 @@ export default function LegalTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -158,7 +158,7 @@ export default function LegalTemplate({
                   <Save className="w-4 h-4 mr-2" />
                 )}
 
-                {generatedCvNumber || cvNumber ? "Update_Record" : "Save_Draft"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -171,7 +171,7 @@ export default function LegalTemplate({
                   backgroundColor: generatedCvNumber ? templateConfig.primaryColor : undefined
                 }}
               >
-                <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
           </div>
@@ -181,11 +181,11 @@ export default function LegalTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -240,15 +240,15 @@ export default function LegalTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills & Bar Admissions</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -269,32 +269,32 @@ export default function LegalTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div id="resume-preview" ref={previewRef} className="h-full w-full bg-white">
-                  
+
                   {/* --- PDF CONTENT (LEGAL FORMAL LAYOUT) --- */}
                   <div style={{ height: '100%', padding: '4rem', fontFamily: '"Times New Roman", Times, serif', color: '#000000' }}>
-                    
+
                     {/* Header */}
                     <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
                       <h1 style={{ fontSize: '3rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem', color: '#000000' }}>
                         {data.firstName} {data.lastName}
                       </h1>
-                      
+
                       <div style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', padding: '0.5rem 0', marginBottom: '1rem' }}>
                         <p style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', color: templateConfig.primaryColor, letterSpacing: '0.05em', margin: 0 }}>
                           {data.title}
                         </p>
                       </div>
-                      
+
                       <div style={{ fontSize: '0.9rem', color: '#333', display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
                         <span>{data.location}</span>
                         <span>{data.phone}</span>
@@ -304,10 +304,10 @@ export default function LegalTemplate({
 
                     {/* Summary */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <h3 style={{ 
-                        fontSize: '0.9rem', 
-                        fontWeight: 'bold', 
-                        textTransform: 'uppercase', 
+                      <h3 style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
                         textAlign: 'center',
                         textDecoration: 'underline',
                         textUnderlineOffset: '4px',
@@ -323,10 +323,10 @@ export default function LegalTemplate({
 
                     {/* Experience */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <h3 style={{ 
-                        fontSize: '0.9rem', 
-                        fontWeight: 'bold', 
-                        textTransform: 'uppercase', 
+                      <h3 style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
                         textAlign: 'center',
                         textDecoration: 'underline',
                         textUnderlineOffset: '4px',
@@ -335,7 +335,7 @@ export default function LegalTemplate({
                       }}>
                         Legal Experience
                       </h3>
-                      
+
                       {data.experience.map((exp, i) => (
                         <div key={i} style={{ marginBottom: '1.5rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
@@ -354,10 +354,10 @@ export default function LegalTemplate({
 
                     {/* Education */}
                     <section style={{ marginBottom: '2.5rem' }}>
-                      <h3 style={{ 
-                        fontSize: '0.9rem', 
-                        fontWeight: 'bold', 
-                        textTransform: 'uppercase', 
+                      <h3 style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
                         textAlign: 'center',
                         textDecoration: 'underline',
                         textUnderlineOffset: '4px',
@@ -373,10 +373,10 @@ export default function LegalTemplate({
 
                     {/* Skills */}
                     <section>
-                      <h3 style={{ 
-                        fontSize: '0.9rem', 
-                        fontWeight: 'bold', 
-                        textTransform: 'uppercase', 
+                      <h3 style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
                         textAlign: 'center',
                         textDecoration: 'underline',
                         textUnderlineOffset: '4px',
@@ -392,7 +392,7 @@ export default function LegalTemplate({
 
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -400,7 +400,7 @@ export default function LegalTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 

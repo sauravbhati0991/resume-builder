@@ -139,12 +139,12 @@ export default function CloudArchitectEliteTemplate({
           </div>
           <div className="flex items-center gap-2">
             <button
-               onClick={handleSave}
-               disabled={isSaving}
-               className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center text-sm font-medium h-9 px-4 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-all"
             >
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2 text-blue-600" />}
-              {generatedCvNumber || cvNumber ? "Update_Registry" : "Sync_on_Save"}
+              {generatedCvNumber || cvNumber ? "Update" : "Save"}
             </button>
             <button
               onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -155,7 +155,7 @@ export default function CloudArchitectEliteTemplate({
                 }`}
               style={{ backgroundColor: generatedCvNumber ? templateConfig.accentColor : undefined }}
             >
-              <Download className="w-4 h-4 mr-2" /> PORTFOLIO_EXPORT
+              <Download className="w-4 h-4 mr-2" /> Download
             </button>
           </div>
         </div>

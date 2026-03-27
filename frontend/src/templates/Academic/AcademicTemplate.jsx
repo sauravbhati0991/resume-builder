@@ -1,8 +1,8 @@
 import api from "../../utils/api";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { 
-  ArrowLeft, Save, Download, FileText, Plus, Trash2, Eye, 
+import {
+  ArrowLeft, Save, Download, FileText, Plus, Trash2, Eye,
   Briefcase, GraduationCap, User, Code, Loader2, Mail, Phone, MapPin
 } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export default function AcademicTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION: COLORS & DEFAULTS ---
   const templateConfig = {
     name: "Academic Standard",
@@ -130,15 +130,15 @@ export default function AcademicTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- Header / Toolbar --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
           <div className="flex justify-between items-center">
-            
+
             {/* Left: Back & Title */}
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate('/templates')}
                 className="inline-flex items-center justify-center text-sm font-medium transition-colors hover:bg-gray-100 text-gray-600 h-9 px-3 rounded-md"
               >
@@ -146,7 +146,7 @@ export default function AcademicTemplate({
               </button>
               <div className="h-6 w-px bg-gray-200 mx-2"></div>
               <div className="flex items-center gap-2">
-                <div 
+                <div
                   className="p-1.5 rounded-lg shadow-sm"
                   style={{ backgroundColor: templateConfig.primaryColor }}
                 >
@@ -181,7 +181,7 @@ export default function AcademicTemplate({
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
-                <Download className="mr-2" /> PDF
+                <Download className="mr-2" /> Download
               </button>
             </div>
 
@@ -192,11 +192,11 @@ export default function AcademicTemplate({
       {/* --- Main Content Area --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- LEFT: Editor Panel --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               {/* Personal Info Card */}
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
@@ -219,7 +219,7 @@ export default function AcademicTemplate({
                   <FileText className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Professional Summary</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={4}
                   value={data.summary}
                   onChange={(e) => handleInputChange('summary', e.target.value)}
@@ -235,19 +235,19 @@ export default function AcademicTemplate({
                     <Briefcase className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                     <h3>Experience</h3>
                   </div>
-                  <button 
-                    onClick={addExperience} 
+                  <button
+                    onClick={addExperience}
                     className="text-sm px-2 py-1 rounded flex items-center gap-1 hover:opacity-80 transition-opacity"
                     style={{ color: templateConfig.primaryColor, backgroundColor: `${templateConfig.primaryColor}15` }}
                   >
                     <Plus className="w-3 h-3" /> Add
                   </button>
                 </div>
-                
+
                 <div className="space-y-6">
                   {data.experience.map((exp, index) => (
                     <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-100 relative group">
-                      <button 
+                      <button
                         onClick={() => removeExperience(index)}
                         className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -259,7 +259,7 @@ export default function AcademicTemplate({
                         <InputGroup label="Dates" value={exp.dates} onChange={(v) => handleArrayChange(index, 'dates', v, 'experience')} className="md:col-span-2" />
                         <div className="md:col-span-2">
                           <label className="text-xs font-medium text-gray-500 mb-1 block">Description</label>
-                          <textarea 
+                          <textarea
                             rows={3}
                             value={exp.description}
                             onChange={(e) => handleArrayChange(index, 'description', e.target.value, 'experience')}
@@ -274,11 +274,11 @@ export default function AcademicTemplate({
 
               {/* Skills Card */}
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={3}
                   value={data.skills}
                   onChange={(e) => handleInputChange('skills', e.target.value)}
@@ -287,13 +287,13 @@ export default function AcademicTemplate({
                 />
               </div>
 
-               {/* Education Card */}
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              {/* Education Card */}
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6 transition-all hover:shadow-xl">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
-                <textarea 
+                <textarea
                   rows={3}
                   value={data.education}
                   onChange={(e) => handleInputChange('education', e.target.value)}
@@ -307,16 +307,16 @@ export default function AcademicTemplate({
           {/* --- RIGHT: Preview Panel --- */}
           <div className="h-full overflow-hidden flex flex-col">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-full flex flex-col">
-              
+
               {/* Preview Content Area */}
               <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-                <div 
+                <div
                   id="resume-preview"
                   ref={previewRef}
                   className="shadow-2xl bg-white"
                   style={{
-                    width: '210mm', 
-                    minHeight: '297mm', 
+                    width: '210mm',
+                    minHeight: '297mm',
                     padding: '20mm'
                   }}
                 >
@@ -362,18 +362,18 @@ export default function AcademicTemplate({
 
                   {/* Skills & Education Grid */}
                   <div className="grid grid-cols-2 gap-12">
-                     <div>
-                        <h3 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: templateConfig.primaryColor }}>Core Competencies</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {data.skills.split(',').map((skill, i) => (
-                            <span key={i} className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600 font-medium">{skill.trim()}</span>
-                          ))}
-                        </div>
-                     </div>
-                     <div>
-                        <h3 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: templateConfig.primaryColor }}>Education</h3>
-                        <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{data.education}</p>
-                     </div>
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: templateConfig.primaryColor }}>Core Competencies</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {data.skills.split(',').map((skill, i) => (
+                          <span key={i} className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600 font-medium">{skill.trim()}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: templateConfig.primaryColor }}>Education</h3>
+                      <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{data.education}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -382,7 +382,7 @@ export default function AcademicTemplate({
               <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
                 <span>Scroll to see more</span>
                 <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                  <Eye className="w-3 h-3"/>
+                  <Eye className="w-3 h-3" />
                   Preview Mode
                 </div>
               </div>
@@ -416,9 +416,9 @@ export default function AcademicTemplate({
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
     />

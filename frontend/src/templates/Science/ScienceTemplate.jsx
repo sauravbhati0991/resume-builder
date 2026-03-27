@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -26,9 +26,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 transition-shadow"
     />
@@ -42,7 +42,7 @@ export default function ScienceTemplate({
 }) {
   const navigate = useNavigate();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Science & Research",
@@ -72,7 +72,7 @@ export default function ScienceTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -129,7 +129,7 @@ export default function ScienceTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -157,7 +157,7 @@ export default function ScienceTemplate({
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
                 )}
-                {generatedCvNumber || cvNumber ? "Update_Registry" : "Sync_on_Save"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -168,7 +168,7 @@ export default function ScienceTemplate({
                   }`}
                 style={{ backgroundColor: generatedCvNumber ? templateConfig.accentColor : undefined }}
               >
-                <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
           </div>
@@ -178,11 +178,11 @@ export default function ScienceTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -237,15 +237,15 @@ export default function ScienceTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <FlaskConical className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills & Techniques</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -266,24 +266,24 @@ export default function ScienceTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div id="resume-preview" ref={previewRef} className="h-full w-full bg-white font-sans">
-                  
+
                   {/* --- PDF CONTENT (LAB REPORT LAYOUT) --- */}
                   <div style={{ height: '100%', padding: '3rem', color: '#1e293b' }}>
-                    
+
                     {/* Header */}
-                    <header style={{ 
-                      borderBottom: `4px solid ${templateConfig.primaryColor}`, 
-                      paddingBottom: '1.5rem', 
+                    <header style={{
+                      borderBottom: `4px solid ${templateConfig.primaryColor}`,
+                      paddingBottom: '1.5rem',
                       marginBottom: '2rem',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -319,14 +319,14 @@ export default function ScienceTemplate({
                       <h3 style={{ fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem', color: '#334155' }}>
                         Professional Experience
                       </h3>
-                      
+
                       {data.experience.map((exp, i) => (
                         <div key={i} style={{ display: 'grid', gridTemplateColumns: '20% 75%', gap: '5%', marginBottom: '1.5rem' }}>
                           {/* Date Column */}
                           <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: templateConfig.primaryColor, paddingTop: '0.2rem' }}>
                             {exp.dates}
                           </div>
-                          
+
                           {/* Details Column */}
                           <div>
                             <h4 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>{exp.role}</h4>
@@ -341,7 +341,7 @@ export default function ScienceTemplate({
 
                     {/* Footer Grid (Skills & Education) */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', paddingTop: '1rem' }}>
-                      
+
                       {/* Skills */}
                       <section>
                         <h3 style={{ fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: `2px solid ${templateConfig.primaryColor}`, paddingBottom: '0.25rem', marginBottom: '0.75rem', color: '#334155' }}>
@@ -362,7 +362,7 @@ export default function ScienceTemplate({
 
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function ScienceTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 
@@ -386,7 +386,7 @@ export default function ScienceTemplate({
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Record Synchronized</h3>
             <p className="text-sm text-slate-500 mb-8 font-medium italic underline decoration-teal-600/30 underline-offset-4 tracking-wide text-slate-900">
-               Your research profile has been synchronized with the global science registry.
+              Your research profile has been synchronized with the global science registry.
             </p>
             <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-6 rounded-xl mb-8 font-mono">
               <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-2 text-center">Experiment ID</p>

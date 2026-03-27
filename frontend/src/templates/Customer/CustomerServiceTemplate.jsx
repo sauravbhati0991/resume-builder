@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   MapPin,
@@ -26,9 +26,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow"
     />
@@ -43,7 +43,7 @@ export default function CustomerServiceTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Customer Service",
@@ -73,7 +73,7 @@ export default function CustomerServiceTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -130,7 +130,7 @@ export default function CustomerServiceTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -169,7 +169,7 @@ export default function CustomerServiceTemplate({
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
-                <Download className="mr-2" /> PDF
+                <Download className="mr-2" /> Download
               </button>
             </div>
           </div>
@@ -179,11 +179,11 @@ export default function CustomerServiceTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -238,15 +238,15 @@ export default function CustomerServiceTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -267,29 +267,29 @@ export default function CustomerServiceTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 id="resume-preview"
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div ref={previewRef} className="h-full w-full bg-slate-50 font-sans">
-                  
+
                   {/* --- PDF CONTENT (FRIENDLY LAYOUT) --- */}
                   <div style={{ height: '100%', padding: '2rem' }}>
-                    
+
                     {/* Header Card */}
-                    <div style={{ 
-                      backgroundColor: 'white', 
-                      borderRadius: '1.5rem', 
-                      padding: '2rem', 
-                      marginBottom: '2rem', 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                    <div style={{
+                      backgroundColor: 'white',
+                      borderRadius: '1.5rem',
+                      padding: '2rem',
+                      marginBottom: '2rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       borderTop: `8px solid ${templateConfig.primaryColor}`,
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
@@ -309,7 +309,7 @@ export default function CustomerServiceTemplate({
 
                     {/* Main Content Grid - Using CSS Grid for PDF Safety */}
                     <div style={{ display: 'grid', gridTemplateColumns: '30% 65%', gap: '5%' }}>
-                      
+
                       {/* Left Column (Skills & Ed) */}
                       <div>
                         {/* Skills Bubble */}
@@ -319,12 +319,12 @@ export default function CustomerServiceTemplate({
                           </h3>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                             {data.skills.split(',').map((s, i) => (
-                              <span key={i} style={{ 
-                                backgroundColor: '#f1f5f9', 
-                                color: '#475569', 
-                                padding: '0.25rem 0.75rem', 
-                                borderRadius: '9999px', 
-                                fontSize: '0.75rem', 
+                              <span key={i} style={{
+                                backgroundColor: '#f1f5f9',
+                                color: '#475569',
+                                padding: '0.25rem 0.75rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.75rem',
                                 fontWeight: 'bold',
                                 display: 'inline-block'
                               }}>
@@ -358,7 +358,7 @@ export default function CustomerServiceTemplate({
                           <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1e293b' }}>
                             <span style={{ color: templateConfig.primaryColor }}>★</span> Experience
                           </h3>
-                          
+
                           {data.experience.map((exp, i) => (
                             <div key={i} style={{ marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1.5rem' }}>
                               <div style={{ marginBottom: '0.5rem' }}>
@@ -376,7 +376,7 @@ export default function CustomerServiceTemplate({
                     </div>
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -384,7 +384,7 @@ export default function CustomerServiceTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 
@@ -395,15 +395,15 @@ export default function CustomerServiceTemplate({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md px-4 text-center">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border-t-8 border-[#0077BE]">
             <div className="w-20 h-20 bg-blue-50 text-[#0077BE] rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck size={48}/>
+              <ShieldCheck size={48} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Record Certified</h3>
             <p className="text-sm text-slate-500 mb-8 font-medium italic underline decoration-[#0077BE]/30 underline-offset-4 tracking-wide">
               Customer service expertise successfully archived.
             </p>
             <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-6 rounded-xl mb-8 font-mono">
-               <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-2 text-center">Service Ticket ID</p>
-               <p className="text-3xl font-black text-[#0077BE] tracking-tighter text-center">{generatedCvNumber}</p>
+              <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-2 text-center">Service Ticket ID</p>
+              <p className="text-3xl font-black text-[#0077BE] tracking-tighter text-center">{generatedCvNumber}</p>
             </div>
             <button onClick={() => setShowSuccessModal(false)} className="w-full py-4 rounded-xl bg-[#0077BE] text-white font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#005c94] transition-all active:scale-95">
               Back to Terminal

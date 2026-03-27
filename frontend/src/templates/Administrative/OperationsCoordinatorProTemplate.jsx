@@ -162,7 +162,7 @@ export default function OperationsCoordinatorProTemplate({
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
             >
-              <Download className="mr-2" /> PDF
+              <Download className="mr-2" /> Download
             </button>
           </div>
         </div>

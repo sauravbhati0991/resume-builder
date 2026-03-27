@@ -1,18 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { CheckCircle2, 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  CheckCircle2,
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -25,9 +26,9 @@ import { CheckCircle2,
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
     />
@@ -42,7 +43,7 @@ export default function SalesTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Sales & Marketing",
@@ -72,7 +73,7 @@ export default function SalesTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -129,7 +130,7 @@ export default function SalesTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -157,7 +158,7 @@ export default function SalesTemplate({
                 ) : (
                   <Save className="w-4 h-4 mr-2 text-indigo-600" />
                 )}
-                {generatedCvNumber || cvNumber ? "Update_Registry" : "Sync_on_Save"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -167,7 +168,7 @@ export default function SalesTemplate({
                   : "bg-gray-300 cursor-not-allowed opacity-50"
                   }`}
               >
-                <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
           </div>
@@ -177,11 +178,11 @@ export default function SalesTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -236,15 +237,15 @@ export default function SalesTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Award className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -265,24 +266,24 @@ export default function SalesTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div id="resume-preview" ref={previewRef} className="h-full w-full bg-white text-slate-900">
-                  
+
                   {/* --- PDF CONTENT (BOLD IMPACT LAYOUT) --- */}
                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    
+
                     {/* Header Box */}
                     <header style={{ backgroundColor: templateConfig.primaryColor, padding: '2.5rem', color: 'white' }}>
                       <h1 style={{ fontSize: '3rem', fontWeight: '800', textTransform: 'uppercase', lineHeight: '1', marginBottom: '0.5rem' }}>
-                        {data.firstName} <br/> {data.lastName}
+                        {data.firstName} <br /> {data.lastName}
                       </h1>
                       <p style={{ fontSize: '1.5rem', fontWeight: '300', color: '#FEF3C7' }}>{data.title}</p>
                     </header>
@@ -296,7 +297,7 @@ export default function SalesTemplate({
 
                     {/* Main Content Grid - Using CSS Grid for PDF Safety */}
                     <div style={{ display: 'grid', gridTemplateColumns: '65% 30%', gap: '5%', padding: '2.5rem', flex: 1 }}>
-                      
+
                       {/* Left Column (Main) */}
                       <div>
                         <section style={{ marginBottom: '2rem' }}>
@@ -310,7 +311,7 @@ export default function SalesTemplate({
                           <h3 style={{ fontSize: '1.25rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', borderBottom: `4px solid ${templateConfig.primaryColor}`, paddingBottom: '0.25rem', display: 'inline-block' }}>
                             Performance History
                           </h3>
-                          
+
                           {data.experience.map((exp, i) => (
                             <div key={i} style={{ marginBottom: '2rem' }}>
                               <h4 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#111827' }}>{exp.role}</h4>
@@ -340,7 +341,7 @@ export default function SalesTemplate({
                               </div>
                             ))}
                           </div>
-                          
+
                           <h3 style={{ fontSize: '1rem', fontWeight: '900', textTransform: 'uppercase', marginTop: '2rem', marginBottom: '1rem', color: '#111827' }}>Education</h3>
                           <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.4' }}>{data.education}</p>
                         </div>
@@ -349,7 +350,7 @@ export default function SalesTemplate({
                     </div>
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -357,7 +358,7 @@ export default function SalesTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
           </div>
@@ -372,7 +373,7 @@ export default function SalesTemplate({
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Impact Recorded</h3>
             <p className="text-sm text-slate-500 mb-8 font-medium italic underline decoration-red-600/30 underline-offset-4 tracking-wide text-slate-900">
-               Your sales profile has been synchronized with the global impact registry.
+              Your sales profile has been synchronized with the global impact registry.
             </p>
             <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-6 rounded-xl mb-8 font-mono">
               <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-2 text-center">Registration ID</p>

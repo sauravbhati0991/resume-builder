@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -24,9 +24,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow"
     />
@@ -41,7 +41,7 @@ export default function CreativeTemplate({
   const navigate = useNavigate();
   const { templateId } = useParams();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Creative & Media",
@@ -71,7 +71,7 @@ export default function CreativeTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -128,7 +128,7 @@ export default function CreativeTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -167,7 +167,7 @@ export default function CreativeTemplate({
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
-                <Download className="mr-2" /> PDF
+                <Download className="mr-2" /> Download
               </button>
             </div>
           </div>
@@ -177,11 +177,11 @@ export default function CreativeTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -236,15 +236,15 @@ export default function CreativeTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Code className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -265,27 +265,27 @@ export default function CreativeTemplate({
             </div>
 
             <div className="h-full bg-slate-200 flex justify-center p-8 overflow-auto custom-scrollbar">
-              <div 
+              <div
                 id="resume-preview"
-                ref={previewRef} 
+                ref={previewRef}
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div className="h-full w-full bg-white relative overflow-hidden font-sans">
-                  
+
                   {/* --- PDF CONTENT (CREATIVE LAYOUT) --- */}
-                  
+
                   {/* Background Shapes (Using z-index 0 to stay behind content) */}
                   <div style={{ position: 'absolute', top: 0, right: 0, width: '400px', height: '400px', borderBottomLeftRadius: '100%', backgroundColor: templateConfig.primaryColor, opacity: 0.1, zIndex: 0 }}></div>
                   <div style={{ position: 'absolute', bottom: 0, left: 0, width: '250px', height: '250px', borderTopRightRadius: '100%', backgroundColor: templateConfig.accentColor, opacity: 0.2, zIndex: 0 }}></div>
 
                   <div style={{ position: 'relative', zIndex: 10, padding: '3rem' }}>
-                    
+
                     {/* Header */}
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid black', paddingBottom: '1.5rem', marginBottom: '3rem' }}>
                       <div style={{ textAlign: 'left' }}>
@@ -307,15 +307,15 @@ export default function CreativeTemplate({
 
                     {/* Content Grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: '30% 65%', gap: '5%' }}>
-                      
+
                       {/* Left Column (Skills & Ed) */}
                       <div>
                         {/* Rotated Skills Box */}
-                        <div style={{ 
-                          backgroundColor: '#f8fafc', 
-                          padding: '1.5rem', 
-                          borderRadius: '0.5rem', 
-                          marginBottom: '2rem', 
+                        <div style={{
+                          backgroundColor: '#f8fafc',
+                          padding: '1.5rem',
+                          borderRadius: '0.5rem',
+                          marginBottom: '2rem',
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                           transform: 'rotate(-2deg)', // Subtle rotation for effect
                           border: `1px solid ${templateConfig.accentColor}`
@@ -323,12 +323,12 @@ export default function CreativeTemplate({
                           <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1rem', color: templateConfig.primaryColor }}>My Skills</h3>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                             {data.skills.split(',').map((s, i) => (
-                              <span key={i} style={{ 
-                                padding: '0.25rem 0.75rem', 
-                                border: '2px solid black', 
-                                borderRadius: '9999px', 
-                                fontSize: '0.75rem', 
-                                fontWeight: 'bold', 
+                              <span key={i} style={{
+                                padding: '0.25rem 0.75rem',
+                                border: '2px solid black',
+                                borderRadius: '9999px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
                                 backgroundColor: 'white',
                                 display: 'inline-block'
                               }}>
@@ -368,7 +368,7 @@ export default function CreativeTemplate({
                     </div>
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -376,7 +376,7 @@ export default function CreativeTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 

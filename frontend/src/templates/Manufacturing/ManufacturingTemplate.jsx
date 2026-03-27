@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  FileText, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Briefcase, 
-  GraduationCap, 
-  User, 
-  Code, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  User,
+  Code,
   Loader2,
   Mail,
   Phone,
@@ -27,9 +27,9 @@ import {
 const InputGroup = ({ label, value, onChange, className = "" }) => (
   <div className={className}>
     <label className="text-xs font-medium text-gray-500 mb-1 block">{label}</label>
-    <input 
-      type="text" 
-      value={value} 
+    <input
+      type="text"
+      value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-700 transition-shadow"
     />
@@ -43,7 +43,7 @@ export default function ManufacturingTemplate({
 }) {
   const navigate = useNavigate();
   const previewRef = useRef();
-  
+
   // --- CONFIGURATION ---
   const templateConfig = {
     name: "Manufacturing & Trades",
@@ -73,7 +73,7 @@ export default function ManufacturingTemplate({
 
   // --- HANDLERS ---
   const handleInputChange = (field, value) => setData(prev => ({ ...prev, [field]: value }));
-  
+
   const handleArrayChange = (index, field, value, arrayName) => {
     const newArray = [...data[arrayName]];
     newArray[index][field] = value;
@@ -130,7 +130,7 @@ export default function ManufacturingTemplate({
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans text-slate-800">
-      
+
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 shrink-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-4">
@@ -158,7 +158,7 @@ export default function ManufacturingTemplate({
                 ) : (
                   <Save className="w-4 h-4 mr-2 text-indigo-600" />
                 )}
-                {generatedCvNumber || cvNumber ? "Update_Registry" : "Save_Draft"}
+                {generatedCvNumber || cvNumber ? "Update" : "Save"}
               </button>
               <button
                 onClick={() => handlePdfDownload(generatedCvNumber)}
@@ -168,7 +168,7 @@ export default function ManufacturingTemplate({
                   : "bg-gray-300 cursor-not-allowed opacity-50"
                   }`}
               >
-                <Download className="w-4 h-4 mr-2" /> PDF_EXPORT
+                <Download className="w-4 h-4 mr-2" /> Download
               </button>
             </div>
           </div>
@@ -178,11 +178,11 @@ export default function ManufacturingTemplate({
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 w-full overflow-hidden min-h-0">
         <div className="grid lg:grid-cols-2 gap-6 h-full">
-          
+
           {/* --- EDITOR (Left) --- */}
           <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
             <div className="pb-20 space-y-6">
-              
+
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <User className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
@@ -237,15 +237,15 @@ export default function ManufacturingTemplate({
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <Wrench className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Skills & Certifications</h3>
                 </div>
                 <textarea rows={3} value={data.skills} onChange={(e) => handleInputChange('skills', e.target.value)} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-700" />
               </div>
 
-               <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
-                 <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm border border-gray-200/60 shadow-lg rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-800">
                   <GraduationCap className="w-5 h-5" style={{ color: templateConfig.primaryColor }} />
                   <h3>Education</h3>
                 </div>
@@ -266,21 +266,21 @@ export default function ManufacturingTemplate({
             </div>
 
             <div className="bg-gray-50 p-6 flex justify-center items-start overflow-auto flex-1 custom-scrollbar">
-              <div 
+              <div
                 id="resume-preview"
                 className="shadow-2xl transition-transform duration-200 bg-white"
                 style={{
                   transform: `scale(${zoom})`,
                   transformOrigin: 'top center',
-                  width: '210mm', 
+                  width: '210mm',
                   minHeight: '297mm',
                 }}
               >
                 <div ref={previewRef} className="h-full w-full bg-white text-slate-900">
-                  
+
                   {/* --- PDF CONTENT (MANUFACTURING FUNCTIONAL LAYOUT) --- */}
                   <div style={{ height: '100%', padding: '2.5rem', fontFamily: 'Arial, Helvetica, sans-serif', color: '#111827' }}>
-                    
+
                     {/* Header */}
                     <header style={{ borderBottom: `5px solid ${templateConfig.primaryColor}`, paddingBottom: '1.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                       <div>
@@ -311,13 +311,13 @@ export default function ManufacturingTemplate({
 
                     {/* Main Layout Grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: '65% 30%', gap: '5%' }}>
-                      
+
                       {/* Left Column - Experience */}
                       <div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1.5rem', borderBottom: '2px solid #E5E7EB', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           Experience
                         </h3>
-                        
+
                         {data.experience.map((exp, i) => (
                           <div key={i} style={{ marginBottom: '2rem', paddingLeft: '1rem', borderLeft: '2px solid #E5E7EB' }}>
                             <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#111827' }}>{exp.role}</h4>
@@ -335,7 +335,7 @@ export default function ManufacturingTemplate({
                       <div>
                         {/* Dark Sidebar Box */}
                         <div style={{ backgroundColor: templateConfig.accentColor, color: 'white', padding: '1.5rem', height: '100%' }}>
-                          
+
                           <div style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '1rem', color: '#FCD34D' }}>
                               Expertise
@@ -362,7 +362,7 @@ export default function ManufacturingTemplate({
                     </div>
                   </div>
                   {/* --- END PDF CONTENT --- */}
-                  
+
                 </div>
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function ManufacturingTemplate({
             <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500">
               <span>Scroll to see more</span>
               <div className="flex items-center gap-1" style={{ color: templateConfig.primaryColor }}>
-                <Eye className="w-3 h-3"/> Preview Mode
+                <Eye className="w-3 h-3" /> Preview Mode
               </div>
             </div>
 
@@ -382,7 +382,7 @@ export default function ManufacturingTemplate({
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 text-center">
           <div className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl border-t-8 border-[#B7410E]">
             <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <CheckCircle2 size={40}/>
+              <CheckCircle2 size={40} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase">Archive Finalized</h3>
             <p className="text-slate-500 text-sm mb-8 px-4 font-medium italic underline decoration-[#B7410E]/30 underline-offset-4 tracking-wide">
