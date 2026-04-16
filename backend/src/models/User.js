@@ -43,6 +43,32 @@ const userSchema = new mongoose.Schema(
       apaarId: { type: String, default: "" },
       transcriptUrl: { type: String, default: "" },
 
+      // ✅ NEW: Verification & Subscription
+      verificationMethod: {
+        type: String,
+        enum: ["APAAR", "UAN", "AADHAAR", "SKIPPED", "NONE", ""],
+        default: "",
+      },
+      verificationStatus: {
+        type: String,
+        enum: ["PENDING", "VERIFIED", "FAILED", "SKIPPED", "NONE", ""],
+        default: "",
+      },
+      verifiedAt: { type: Date, default: null },
+      uanNumber: { type: String, default: "" },
+      aadhaarVerified: { type: Boolean, default: false },
+      aadhaarName: { type: String, default: "" },
+      verifiedName: { type: String, default: "" },
+      verifiedInstitution: { type: String, default: "" },
+      verifiedCourse: { type: String, default: "" },
+      subscriptionExpiry: { type: Date, default: null },
+
+      verifiedDob: { type: String, default: "" },
+      verifiedGender: { type: String, default: "" },
+      verifiedDigilockerId: { type: String, default: "" },
+
+      digilockerCodeVerifier: { type: String, default: "" },
+
       // ✅ NEW
       eduEmail: { type: String, default: "" },
       eduEmailVerified: { type: Boolean, default: false },

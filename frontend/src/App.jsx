@@ -16,6 +16,7 @@ import AcademicPursuit from "./pages/onboarding/AcademicPursuit";
 import OnboardingDetails from "./pages/onboarding/OnboardingDetails";
 import StudentVerification from "./pages/onboarding/StudentVerification";
 import FinalVerification from "./pages/onboarding/FinalVerification";
+import ApaarCallback from "./pages/onboarding/ApaarCallback";
 
 /* Public Marketing Templates */
 import PublicTemplatesPage from "./pages/PublicTemplatesPage";
@@ -131,6 +132,7 @@ export default function App() {
             path="/onboarding/final-verification"
             element={<FinalVerification />}
           />
+          <Route path="/verification/callback" element={<ApaarCallback />} />
 
           <Route path="/dashboard-gate" element={<DashboardGate />} />
 

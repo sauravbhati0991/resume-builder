@@ -9,7 +9,13 @@ const {
   resetPassword,
 } = require("../controllers/auth.controller");
 
+const {
+  digilockerCallback
+} = require("../controllers/idVerification.controller");
+
 const router = express.Router();
+
+router.get("/digilocker/callback", digilockerCallback);
 
 router.post("/signup", signup);
 router.post("/signup/verify-otp", verifySignupOtp);
