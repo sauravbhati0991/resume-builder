@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useLocation, useSearchParams } from "react-router-dom";
+import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { CATEGORY_TEMPLATE_MAP, SPECIFIC_TEMPLATE_MAP } from "../templates/registry";
 import { Loader2 } from "lucide-react";
@@ -11,6 +11,7 @@ export default function BuilderView() {
   const [searchParams] = useSearchParams();
   const cvNumber = searchParams.get("cv");
 
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [SelectedComponent, setSelectedComponent] = useState(null);
   const [templateInfo, setTemplateInfo] = useState(null);
@@ -80,6 +81,27 @@ export default function BuilderView() {
         setLoading(true);
 
         const { data: template } = await api.get(`/templates/${templateId}`);
+        
+        // Security check for paid template
+        let hasActiveSubscription = false;
+        try {
+          const uStr = localStorage.getItem("user");
+          const oStr = localStorage.getItem("onboarding");
+          const u = uStr ? JSON.parse(uStr) : {};
+          const o = oStr ? JSON.parse(oStr) : {};
+          const expiry = u?.onboarding?.subscriptionExpiry || o?.subscriptionExpiry;
+          if (expiry && new Date(expiry) > new Date()) {
+            hasActiveSubscription = true;
+          }
+        } catch (e) {}
+
+        if (template.isPaid && !hasActiveSubscription) {
+          // It's a Paid template, and user isn't subscribed
+          const basePath = location.pathname.startsWith("/stu") ? "/stu" : "/pro";
+          navigate(`${basePath}/pricing`);
+          return;
+        }
+
         setTemplateInfo(template);
 
         // edit mode

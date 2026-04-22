@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../utils/api";
-import { Users, GraduationCap, Briefcase, RefreshCcw, ChevronDown, ChevronUp, ShieldCheck, School, BookOpen, Fingerprint, Calendar, User } from "lucide-react";
+import { Users, GraduationCap, Briefcase, RefreshCcw, ChevronDown, ChevronUp, ShieldCheck, Fingerprint, Calendar, User } from "lucide-react";
 
 export default function AdminUsers() {
   const [stats, setStats] = useState(null);
@@ -126,6 +126,8 @@ export default function AdminUsers() {
                           <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                             u.verificationStatus === 'VERIFIED' 
                               ? 'bg-green-50 text-green-600 border border-green-100' 
+                              : u.verificationStatus === 'FAILED'
+                              ? 'bg-red-50 text-red-600 border border-red-100'
                               : 'bg-gray-50 text-gray-400 border border-gray-100'
                           }`}>
                             {u.verificationStatus || 'NONE'}
@@ -135,7 +137,7 @@ export default function AdminUsers() {
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4">
-                          {u.subscriptionExpiry ? (
+                          {u.verificationStatus === 'VERIFIED' && u.subscriptionExpiry ? (
                             <span className="text-emerald-600 font-bold whitespace-nowrap">
                               {new Date(u.subscriptionExpiry).toLocaleDateString()}
                             </span>
@@ -177,7 +179,6 @@ export default function AdminUsers() {
                                         {(() => {
                                           const dob = u.verifiedDob;
                                           if (!dob) return 'N/A';
-                                          // Format continuous 8-digit strings (DDMMYYYY -> DD/MM/YYYY)
                                           if (dob.length === 8 && !dob.includes('-') && !dob.includes('/')) {
                                             return `${dob.slice(0, 2)}/${dob.slice(2, 4)}/${dob.slice(4)}`;
                                           }
@@ -200,38 +201,35 @@ export default function AdminUsers() {
                                   </div>
 
                                   <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-xl bg-blue-50">
-                                      <School className="w-5 h-5 text-blue-600" />
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Institution</p>
-                                      <p className="text-xs font-semibold text-gray-700 leading-tight">
-                                        {u.verifiedInstitution || 'Official Linked College'}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-xl bg-emerald-50">
-                                      <BookOpen className="w-5 h-5 text-emerald-600" />
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Course / Program</p>
-                                      <p className="text-xs font-semibold text-gray-700 leading-tight">
-                                        {u.verifiedCourse || 'Student Enrollment'}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-start gap-3">
                                     <div className="p-2 rounded-xl bg-indigo-50">
                                       <RefreshCcw className="w-5 h-5 text-indigo-600" />
                                     </div>
                                     <div>
                                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DigiLocker ID</p>
                                       <p className="text-[13px] font-black text-gray-900 tracking-wider">
-                                        {u.verifiedDigilockerId || u.apaarId || 'N/A'}
+                                        {u.verifiedDigilockerId || 'N/A'}
                                       </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-xl bg-purple-50">
+                                      <Fingerprint className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">APAAR ID</p>
+                                      <p className="text-[13px] font-black text-gray-900 tracking-wider">
+                                        {u.apaarId || 'N/A'}
+                                      </p>
+                                      {u.apaarVerificationMethod && (
+                                        <span className={`mt-1 inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                                          u.apaarVerificationMethod === 'DIGILOCKER_AUTO'
+                                            ? 'bg-green-50 text-green-600 border border-green-100'
+                                            : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                        }`}>
+                                          {u.apaarVerificationMethod === 'DIGILOCKER_AUTO' ? '✓ Auto-verified' : '⌨ Manual entry'}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </>

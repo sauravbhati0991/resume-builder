@@ -109,7 +109,7 @@ exports.getDashboardStats = async (req, res) => {
 // ✅ GET USERS LIST
 exports.getUsersList = async (req, res) => {
   try {
-    const users = await User.find({}, "fullName email onboarding.accountType onboarding.apaarId onboarding.verificationStatus onboarding.subscriptionExpiry onboarding.verifiedName onboarding.verifiedInstitution onboarding.verifiedCourse onboarding.verifiedDob onboarding.verifiedGender onboarding.verifiedDigilockerId createdAt").sort({ createdAt: -1 });
+    const users = await User.find({}, "fullName email onboarding.accountType onboarding.apaarId onboarding.apaarVerificationMethod onboarding.verificationStatus onboarding.subscriptionExpiry onboarding.verifiedName onboarding.verifiedInstitution onboarding.verifiedCourse onboarding.verifiedDob onboarding.verifiedGender onboarding.verifiedDigilockerId createdAt").sort({ createdAt: -1 });
 
     const formattedUsers = users.map(u => ({
       id: u._id,
@@ -117,6 +117,7 @@ exports.getUsersList = async (req, res) => {
       email: u.email,
       accountType: u.onboarding?.accountType || "professional",
       apaarId: u.onboarding?.apaarId || "N/A",
+      apaarVerificationMethod: u.onboarding?.apaarVerificationMethod || "",
       verificationStatus: u.onboarding?.verificationStatus || "N/A",
       subscriptionExpiry: u.onboarding?.subscriptionExpiry,
       verifiedName: u.onboarding?.verifiedName,

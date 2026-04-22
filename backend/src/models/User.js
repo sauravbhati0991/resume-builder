@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
         enum: ["PENDING", "VERIFIED", "FAILED", "SKIPPED", "NONE", ""],
         default: "",
       },
+      apaarVerificationMethod: {
+        type: String,
+        enum: ["DIGILOCKER_AUTO", ""],
+        default: "",
+      },
       verifiedAt: { type: Date, default: null },
       uanNumber: { type: String, default: "" },
       aadhaarVerified: { type: Boolean, default: false },

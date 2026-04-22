@@ -12,7 +12,9 @@ export default function StudentPricing() {
     const fetchUser = async () => {
       try {
         const res = await api.get("/users/me");
-        if (res.data?.onboarding?.verificationMethod === "APAAR" && res.data?.onboarding?.verificationStatus === "VERIFIED") {
+        const onboarding = res.data?.onboarding || res.data?.data?.onboarding || {};
+
+        if (onboarding.verificationMethod === "APAAR" && onboarding.verificationStatus === "VERIFIED") {
           setIsApaarVerified(true);
         }
       } catch (err) {

@@ -56,7 +56,27 @@ const TemplatePreviewPage = () => {
               </div>
 
               <button
-                onClick={() => navigate(`/builder/${template.slug}`)}
+                onClick={() => {
+                  let hasActiveSubscription = false;
+                  try {
+                    const userStr = localStorage.getItem("user");
+                    if (userStr) {
+                      const user = JSON.parse(userStr);
+                      const expiry = user?.onboarding?.subscriptionExpiry;
+                      if (expiry && new Date(expiry) > new Date()) {
+                        hasActiveSubscription = true;
+                      }
+                    }
+                  } catch (e) {
+                    console.error("Failed to parse user data", e);
+                  }
+
+                  if (template.isPaid && !hasActiveSubscription) {
+                    navigate("/pricing");
+                  } else {
+                    navigate(`/builder/${template.slug}`);
+                  }
+                }}
                 className="bg-black text-white px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:opacity-90"
               >
                 Use This Template

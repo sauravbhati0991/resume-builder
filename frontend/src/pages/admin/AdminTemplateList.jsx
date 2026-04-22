@@ -5,7 +5,7 @@ import { Eye, EyeOff, Trash2, Edit3, X, Save, IndianRupee, Lock, CheckCircle, Al
 const AdminTemplateList = ({ categoryId }) => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // --- EDIT MODAL STATE ---
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -45,8 +45,8 @@ const AdminTemplateList = ({ categoryId }) => {
       await api.patch(`/templates/${id}/toggle`);
       // Optimistic update
       setTemplates(prev => prev.map(t => t._id === id ? { ...t, isActive: !t.isActive } : t));
-    } catch (e) { 
-      alert("Failed to toggle visibility"); 
+    } catch (e) {
+      alert("Failed to toggle visibility");
     }
   };
 
@@ -56,8 +56,8 @@ const AdminTemplateList = ({ categoryId }) => {
     try {
       await api.delete(`/templates/${id}`);
       setTemplates(prev => prev.filter(t => t._id !== id));
-    } catch (e) { 
-      alert("Failed to delete"); 
+    } catch (e) {
+      alert("Failed to delete");
     }
   };
 
@@ -83,7 +83,7 @@ const AdminTemplateList = ({ categoryId }) => {
         // Logic: If switching to Free, force price to 0
         price: editForm.isPaid ? Number(editForm.price) : 0
       });
-      
+
       alert("✅ Template Updated Successfully!");
       setEditingTemplate(null);
       fetchTemplates(); // Refresh list to show changes
@@ -95,7 +95,7 @@ const AdminTemplateList = ({ categoryId }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative mt-6">
-      
+
       {/* Header State Handling */}
       {!categoryId ? (
         <div className="text-center py-12 flex flex-col items-center justify-center text-gray-500">
@@ -117,16 +117,16 @@ const AdminTemplateList = ({ categoryId }) => {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {templates.map((t) => (
             <div key={t._id} className={`border rounded-xl overflow-hidden transition bg-white group relative shadow-sm hover:shadow-md ${!t.isActive ? "opacity-75 bg-gray-50 border-gray-300" : "border-gray-200"}`}>
-              
+
               {/* Image & Badges */}
               <div className="relative h-48 bg-gray-100 group-hover:opacity-90 transition">
                 <img src={t.previewImage} alt={t.name} className="w-full h-full object-cover object-top" />
-                
+
                 {/* Price Badge */}
                 <div className="absolute top-2 right-2">
                   {t.isPaid ? (
                     <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded shadow flex items-center gap-1">
-                      <Lock size={10} /> ₹{t.price}
+                      <Lock size={10} /> PAID
                     </span>
                   ) : (
                     <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow flex items-center gap-1">
@@ -137,9 +137,9 @@ const AdminTemplateList = ({ categoryId }) => {
 
                 {/* Status Badge */}
                 <div className="absolute bottom-2 left-2">
-                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${t.isActive ? "bg-white text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
-                      {t.isActive ? "ACTIVE" : "HIDDEN"}
-                   </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${t.isActive ? "bg-white text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
+                    {t.isActive ? "ACTIVE" : "HIDDEN"}
+                  </span>
                 </div>
               </div>
 
@@ -150,26 +150,26 @@ const AdminTemplateList = ({ categoryId }) => {
 
                 {/* Actions */}
                 <div className="flex items-center justify-between border-t pt-3">
-                  <button 
-                    onClick={() => toggleVisibility(t._id)} 
-                    className={`p-2 rounded transition ${t.isActive ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-green-600 hover:bg-green-50"}`} 
+                  <button
+                    onClick={() => toggleVisibility(t._id)}
+                    className={`p-2 rounded transition ${t.isActive ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-green-600 hover:bg-green-50"}`}
                     title={t.isActive ? "Hide Template" : "Show Template"}
                   >
                     {t.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
                   </button>
-                  
+
                   {/* EDIT BUTTON - CLICK THIS TO CHANGE PRICE */}
-                  <button 
-                    onClick={() => handleEditClick(t)} 
-                    className="p-2 rounded text-blue-600 hover:bg-blue-50 transition" 
+                  <button
+                    onClick={() => handleEditClick(t)}
+                    className="p-2 rounded text-blue-600 hover:bg-blue-50 transition"
                     title="Edit Template Details"
                   >
                     <Edit3 size={18} />
                   </button>
-                  
-                  <button 
-                    onClick={() => deleteTemplate(t._id)} 
-                    className="p-2 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition" 
+
+                  <button
+                    onClick={() => deleteTemplate(t._id)}
+                    className="p-2 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition"
                     title="Delete Permanently"
                   >
                     <Trash2 size={18} />
@@ -185,7 +185,7 @@ const AdminTemplateList = ({ categoryId }) => {
       {editingTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-            
+
             <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-800">Edit Template</h3>
               <button onClick={() => setEditingTemplate(null)} className="text-gray-400 hover:text-gray-600 transition">
@@ -194,12 +194,12 @@ const AdminTemplateList = ({ categoryId }) => {
             </div>
 
             <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
-              
+
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -210,8 +210,8 @@ const AdminTemplateList = ({ categoryId }) => {
               {/* Image */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preview Image URL</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition"
                   value={editForm.previewImage}
                   onChange={(e) => setEditForm({ ...editForm, previewImage: e.target.value })}
@@ -221,44 +221,29 @@ const AdminTemplateList = ({ categoryId }) => {
 
               {/* --- PRICE CONTROL --- */}
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 transition-all">
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-                    checked={editForm.isPaid}
-                    onChange={(e) => setEditForm({ ...editForm, isPaid: e.target.checked })}
-                  />
+                <div className="flex items-center justify-between">
                   <span className="font-bold text-gray-800">Is this a Paid Template?</span>
-                </label>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, isPaid: !editForm.isPaid })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${editForm.isPaid ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editForm.isPaid ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
 
-                {editForm.isPaid && (
-                  <div className="mt-4 animate-in slide-in-from-top-2">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price (INR)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-500"><IndianRupee size={16}/></span>
-                      <input 
-                        type="number" 
-                        className="w-full border rounded-lg p-2 pl-9 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                        value={editForm.price}
-                        onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                        min="1"
-                        required={editForm.isPaid}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setEditingTemplate(null)} 
+                <button
+                  type="button"
+                  onClick={() => setEditingTemplate(null)}
                   className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex justify-center items-center gap-2 shadow-sm transition"
                 >
                   <Save size={18} /> Save Changes
